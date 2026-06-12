@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Notifications.Application\ShelfLife.Notifications.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Shared\ShelfLife.Infrastructure.Persistence\ShelfLife.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Shared\ShelfLife.Infrastructure.Messaging\ShelfLife.Infrastructure.Messaging.csproj" />
+    <ProjectReference Include="..\..\Identity\ShelfLife.Identity.Infrastructure\ShelfLife.Identity.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

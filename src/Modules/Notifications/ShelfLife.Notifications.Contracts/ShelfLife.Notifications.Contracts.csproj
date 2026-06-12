@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Lending\ShelfLife.Lending.Contracts\ShelfLife.Lending.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

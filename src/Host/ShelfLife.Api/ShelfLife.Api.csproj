@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Identity\ShelfLife.Identity.Infrastructure\ShelfLife.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Catalog\ShelfLife.Catalog.Infrastructure\ShelfLife.Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Lending\ShelfLife.Lending.Infrastructure\ShelfLife.Lending.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Insights\ShelfLife.Insights.Infrastructure\ShelfLife.Insights.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Notifications\ShelfLife.Notifications.Infrastructure\ShelfLife.Notifications.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Shared\ShelfLife.Infrastructure.Outbox\ShelfLife.Infrastructure.Outbox.csproj" />
+    <ProjectReference Include="..\..\Shared\ShelfLife.Infrastructure.Messaging\ShelfLife.Infrastructure.Messaging.csproj" />
+  </ItemGroup>
+
+</Project>

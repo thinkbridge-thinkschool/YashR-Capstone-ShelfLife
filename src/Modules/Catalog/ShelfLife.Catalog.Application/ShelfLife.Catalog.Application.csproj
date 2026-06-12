@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Catalog.Domain\ShelfLife.Catalog.Domain.csproj" />
+    <ProjectReference Include="..\ShelfLife.Catalog.Contracts\ShelfLife.Catalog.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

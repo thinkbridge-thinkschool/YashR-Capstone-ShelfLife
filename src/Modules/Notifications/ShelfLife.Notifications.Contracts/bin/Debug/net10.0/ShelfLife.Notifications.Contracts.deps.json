@@ -1,0 +1,55 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "ShelfLife.Notifications.Contracts/1.0.0": {
+        "dependencies": {
+          "ShelfLife.Lending.Contracts": "1.0.0"
+        },
+        "runtime": {
+          "ShelfLife.Notifications.Contracts.dll": {}
+        }
+      },
+      "ShelfLife.Lending.Contracts/1.0.0": {
+        "dependencies": {
+          "ShelfLife.SharedKernel": "1.0.0"
+        },
+        "runtime": {
+          "ShelfLife.Lending.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "ShelfLife.SharedKernel/1.0.0": {
+        "runtime": {
+          "ShelfLife.SharedKernel.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "ShelfLife.Notifications.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ShelfLife.Lending.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ShelfLife.SharedKernel/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,19 @@
+﻿name: ShelfLife
+metadata:
+  template: ShelfLife@0.0.1
+
+services:
+  api:
+    project: src/Host/ShelfLife.Api/ShelfLife.Api.csproj
+    language: csharp
+    host: containerapp
+
+  worker:
+    project: Workers/ShelfLife.OverdueWorker/ShelfLife.OverdueWorker.csproj
+    language: csharp
+    host: containerapp
+
+  web:
+    project: web/ShelfLife-ui
+    language: js
+    host: staticwebapp

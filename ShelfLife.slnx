@@ -1,0 +1,53 @@
+﻿<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/ShelfLife.Api/ShelfLife.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Catalog/">
+    <Project Path="src/Modules/Catalog/ShelfLife.Catalog.Application/ShelfLife.Catalog.Application.csproj" />
+    <Project Path="src/Modules/Catalog/ShelfLife.Catalog.Contracts/ShelfLife.Catalog.Contracts.csproj" />
+    <Project Path="src/Modules/Catalog/ShelfLife.Catalog.Domain/ShelfLife.Catalog.Domain.csproj" />
+    <Project Path="src/Modules/Catalog/ShelfLife.Catalog.Infrastructure/ShelfLife.Catalog.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/ShelfLife.Identity.Application/ShelfLife.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/ShelfLife.Identity.Contracts/ShelfLife.Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/ShelfLife.Identity.Domain/ShelfLife.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/ShelfLife.Identity.Infrastructure/ShelfLife.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Insights/">
+    <Project Path="src/Modules/Insights/ShelfLife.Insights.Application/ShelfLife.Insights.Application.csproj" />
+    <Project Path="src/Modules/Insights/ShelfLife.Insights.Contracts/ShelfLife.Insights.Contracts.csproj" />
+    <Project Path="src/Modules/Insights/ShelfLife.Insights.Infrastructure/ShelfLife.Insights.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Lending/">
+    <Project Path="src/Modules/Lending/ShelfLife.Lending.Application/ShelfLife.Lending.Application.csproj" />
+    <Project Path="src/Modules/Lending/ShelfLife.Lending.Contracts/ShelfLife.Lending.Contracts.csproj" />
+    <Project Path="src/Modules/Lending/ShelfLife.Lending.Domain/ShelfLife.Lending.Domain.csproj" />
+    <Project Path="src/Modules/Lending/ShelfLife.Lending.Infrastructure/ShelfLife.Lending.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/ShelfLife.Notifications.Application/ShelfLife.Notifications.Application.csproj" />
+    <Project Path="src/Modules/Notifications/ShelfLife.Notifications.Contracts/ShelfLife.Notifications.Contracts.csproj" />
+    <Project Path="src/Modules/Notifications/ShelfLife.Notifications.Infrastructure/ShelfLife.Notifications.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/ShelfLife.Infrastructure.Messaging/ShelfLife.Infrastructure.Messaging.csproj" />
+    <Project Path="src/Shared/ShelfLife.Infrastructure.Outbox/ShelfLife.Infrastructure.Outbox.csproj" />
+    <Project Path="src/Shared/ShelfLife.Infrastructure.Persistence/ShelfLife.Infrastructure.Persistence.csproj" />
+    <Project Path="src/Shared/ShelfLife.SharedKernel/ShelfLife.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/arch/">
+    <Project Path="tests/arch/ShelfLife.Architecture.Tests/ShelfLife.Architecture.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/ShelfLife.Catalog.Domain.Tests/ShelfLife.Catalog.Domain.Tests.csproj" />
+    <Project Path="tests/unit/ShelfLife.Lending.Domain.Tests/ShelfLife.Lending.Domain.Tests.csproj" />
+    <Project Path="tests/unit/ShelfLife.Notifications.Application.Tests/ShelfLife.Notifications.Application.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Workers/">
+    <Project Path="Workers/ShelfLife.OverdueWorker/ShelfLife.OverdueWorker.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,67 @@
+﻿services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "ShelfLife_Dev!2024"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0
+
+  seq:
+    image: datalust/seq:latest
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:5341"
+      - "8081:80"
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Host/ShelfLife.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ShelfLife: "Server=sqlserver;Database=ShelfLife;User Id=sa;Password=ShelfLife_Dev!2024;TrustServerCertificate=True"
+      ServiceBus__ConnectionString: "UseDevelopmentStorage=true;DevelopmentStorageProxyUri=http://azurite"
+      Seq__ServerUrl: "http://seq:5341"
+    depends_on:
+      - sqlserver
+      - azurite
+      - seq
+
+  worker:
+    build:
+      context: .
+      dockerfile: Workers/ShelfLife.OverdueWorker/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__ShelfLife: "Server=sqlserver;Database=ShelfLife;User Id=sa;Password=ShelfLife_Dev!2024;TrustServerCertificate=True"
+      ServiceBus__ConnectionString: "UseDevelopmentStorage=true;DevelopmentStorageProxyUri=http://azurite"
+      Seq__ServerUrl: "http://seq:5341"
+    depends_on:
+      - sqlserver
+      - azurite
+
+  web:
+    build:
+      context: web/ShelfLife-ui
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
+
+volumes:
+  sqlserver-data:

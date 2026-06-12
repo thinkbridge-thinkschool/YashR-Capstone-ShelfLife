@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="9.3.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Lending.Application\ShelfLife.Lending.Application.csproj" />
+    <ProjectReference Include="..\ShelfLife.Lending.Domain\ShelfLife.Lending.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Shared\ShelfLife.Infrastructure.Persistence\ShelfLife.Infrastructure.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

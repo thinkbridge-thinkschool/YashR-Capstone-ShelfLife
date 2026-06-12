@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Lending.Domain\ShelfLife.Lending.Domain.csproj" />
+    <ProjectReference Include="..\ShelfLife.Lending.Contracts\ShelfLife.Lending.Contracts.csproj" />
+    <ProjectReference Include="..\..\Catalog\ShelfLife.Catalog.Domain\ShelfLife.Catalog.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

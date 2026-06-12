@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Identity.Domain\ShelfLife.Identity.Domain.csproj" />
+    <ProjectReference Include="..\ShelfLife.Identity.Contracts\ShelfLife.Identity.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

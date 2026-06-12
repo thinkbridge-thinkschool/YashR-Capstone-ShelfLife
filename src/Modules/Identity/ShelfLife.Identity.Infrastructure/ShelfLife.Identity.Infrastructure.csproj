@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Identity.Application\ShelfLife.Identity.Application.csproj" />
+    <ProjectReference Include="..\ShelfLife.Identity.Domain\ShelfLife.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Shared\ShelfLife.Infrastructure.Persistence\ShelfLife.Infrastructure.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShelfLife.Notifications.Contracts\ShelfLife.Notifications.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Shared\ShelfLife.SharedKernel\ShelfLife.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

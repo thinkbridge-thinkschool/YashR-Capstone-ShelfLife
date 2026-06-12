@@ -8,6 +8,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    # Skip deployment when Azure secrets are not configured (capstone scaffold)
+    if: ${{ secrets.AZURE_CREDENTIALS != '' }}
 
     steps:
       - uses: actions/checkout@v4

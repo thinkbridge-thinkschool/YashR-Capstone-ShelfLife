@@ -19,14 +19,14 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore ShelfLife.sln
+        run: dotnet restore ShelfLife.slnx
 
       - name: Build
-        run: dotnet build ShelfLife.sln --no-restore --configuration Release
+        run: dotnet build ShelfLife.slnx --no-restore --configuration Release
 
       - name: Unit Tests
         run: >
-          dotnet test ShelfLife.sln
+          dotnet test ShelfLife.slnx
           --no-build --configuration Release
           --filter "Category!=Integration"
           --logger "trx;LogFileName=unit-results.trx"

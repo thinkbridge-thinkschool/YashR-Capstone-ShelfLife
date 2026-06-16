@@ -1,0 +1,139 @@
+============================================================================================
+ COMMAND
+============================================================================================
+
+az deployment group what-if \
+  --resource-group rg-shelflife-dev \
+  --template-file infra/main.bicep \
+  --parameters infra/parameters/dev.bicepparam \
+  --parameters sqlAdminPassword='<secret>' \
+  --parameters location=southeastasia
+
+============================================================================================
+ OUTPUT  (real Azure — subscription 6fd36877-..., rg-shelflife-dev, southeastasia)
+============================================================================================
+
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+
+Resource and property changes are indicated with this symbol:
+  + Create
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/6fd36877-8e0f-4ced-8f31-4b036b566b9b/resourceGroups/rg-shelflife-dev
+
+  + Microsoft.ServiceBus/namespaces/shelflife-dev-sb [2021-11-01]
+
+      apiVersion:                  "2021-11-01"
+      location:                    "southeastasia"
+      name:                        "shelflife-dev-sb"
+      properties.disableLocalAuth: false
+      sku.name:                    "Standard"
+      tags.environment:            "dev"
+      tags.managedBy:              "Bicep"
+      tags.project:                "ShelfLife"
+      type:                        "Microsoft.ServiceBus/namespaces"
+
+  + Microsoft.ServiceBus/namespaces/shelflife-dev-sb/queues/overdue-books [2021-11-01]
+
+      apiVersion:                                  "2021-11-01"
+      name:                                        "overdue-books"
+      properties.deadLetteringOnMessageExpiration: true
+      properties.defaultMessageTimeToLive:         "P14D"
+      properties.lockDuration:                     "PT1M"
+      properties.maxDeliveryCount:                 5
+      type:                                        "Microsoft.ServiceBus/namespaces/queues"
+
+  + Microsoft.ServiceBus/namespaces/shelflife-dev-sb/topics/notifications [2021-11-01]
+
+      apiVersion:                            "2021-11-01"
+      name:                                  "notifications"
+      properties.defaultMessageTimeToLive:   "P14D"
+      properties.requiresDuplicateDetection: false
+      type:                                  "Microsoft.ServiceBus/namespaces/topics"
+
+  + Microsoft.ServiceBus/namespaces/shelflife-dev-sb/topics/notifications/subscriptions/all-notifications [2021-11-01]
+
+      apiVersion:                                  "2021-11-01"
+      name:                                        "all-notifications"
+      properties.deadLetteringOnMessageExpiration: true
+      properties.lockDuration:                     "PT1M"
+      properties.maxDeliveryCount:                 5
+      type:                                        "Microsoft.ServiceBus/namespaces/topics/subscriptions"
+
+  + Microsoft.Sql/servers/shelflife-dev-sql [2023-08-01]
+
+      apiVersion:                            "2023-08-01"
+      location:                              "southeastasia"
+      name:                                  "shelflife-dev-sql"
+      properties.administratorLogin:         "*******"
+      properties.administratorLoginPassword: "*******"
+      properties.minimalTlsVersion:          "1.2"
+      properties.publicNetworkAccess:        "Enabled"
+      tags.environment:                      "dev"
+      tags.managedBy:                        "Bicep"
+      tags.project:                          "ShelfLife"
+      type:                                  "Microsoft.Sql/servers"
+
+  + Microsoft.Sql/servers/shelflife-dev-sql/databases/ShelfLife [2023-08-01]
+
+      apiVersion:                                  "2023-08-01"
+      location:                                    "southeastasia"
+      name:                                        "ShelfLife"
+      properties.collation:                        "SQL_Latin1_General_CP1_CI_AS"
+      properties.requestedBackupStorageRedundancy: "Local"
+      sku.name:                                    "Basic"
+      tags.environment:                            "dev"
+      tags.managedBy:                              "Bicep"
+      tags.project:                                "ShelfLife"
+      type:                                        "Microsoft.Sql/servers/databases"
+
+  + Microsoft.Sql/servers/shelflife-dev-sql/firewallRules/AllowAzureServices [2023-08-01]
+
+      apiVersion:                "2023-08-01"
+      name:                      "AllowAzureServices"
+      properties.endIpAddress:   "0.0.0.0"
+      properties.startIpAddress: "0.0.0.0"
+      type:                      "Microsoft.Sql/servers/firewallRules"
+
+  + Microsoft.Web/serverfarms/shelflife-dev-plan [2023-12-01]
+
+      apiVersion:          "2023-12-01"
+      kind:                "linux"
+      location:            "southeastasia"
+      name:                "shelflife-dev-plan"
+      properties.reserved: true
+      sku.name:            "B1"
+      tags.environment:    "dev"
+      tags.managedBy:      "Bicep"
+      tags.project:        "ShelfLife"
+      type:                "Microsoft.Web/serverfarms"
+
+  + Microsoft.Web/sites/shelflife-dev-api [2023-12-01]
+
+      apiVersion:              "2023-12-01"
+      kind:                    "app,linux"
+      location:                "southeastasia"
+      name:                    "shelflife-dev-api"
+      properties.httpsOnly:    true
+      properties.serverFarmId: "/subscriptions/6fd36877-.../Microsoft.Web/serverfarms/shelflife-dev-plan"
+      properties.siteConfig:   "*******"
+      tags.environment:        "dev"
+      tags.managedBy:          "Bicep"
+      tags.project:            "ShelfLife"
+      type:                    "Microsoft.Web/sites"
+
+Resource changes: 9 to create.
+
+============================================================================================
+ DEPLOY COMMAND (run after reviewing what-if)
+============================================================================================
+
+az deployment group create \
+  --resource-group rg-shelflife-dev \
+  --template-file infra/main.bicep \
+  --parameters infra/parameters/dev.bicepparam \
+  --parameters sqlAdminPassword='<secret>' \
+  --parameters location=southeastasia \
+  --confirm-with-what-if

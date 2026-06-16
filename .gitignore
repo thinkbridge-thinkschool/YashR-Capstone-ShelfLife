@@ -1,0 +1,58 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# .NET publish
+publish/
+PublishProfiles/
+
+# Test results / coverage
+TestResults/
+*.trx
+*.coveragexml
+coverage/
+*.coverage
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# Docker
+docker-compose.override.yml
+
+# Azure / Bicep compiled ARM JSON (keep .bicep, ignore compiled .json next to them)
+infra/**/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Screenshots (optional — remove if you want to track these)
+screenshots/

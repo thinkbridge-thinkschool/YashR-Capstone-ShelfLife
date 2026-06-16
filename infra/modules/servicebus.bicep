@@ -11,7 +11,7 @@ param tags object
 @allowed(['Standard', 'Premium'])
 param skuName string
 
-var namespaceName = '${prefix}-sb'
+var namespaceName = '${prefix}-bus'
 
 // ── Namespace ─────────────────────────────────────────────────────────────────
 resource namespace 'Microsoft.ServiceBus/namespaces@2021-11-01' = {

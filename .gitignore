@@ -49,6 +49,9 @@ docker-compose.override.yml
 # Azure / Bicep compiled ARM JSON (keep .bicep, ignore compiled .json next to them)
 infra/**/*.json
 
+# azd environment configs (contain subscription ID; recreate with: azd env new)
+.azure/
+
 # OS
 .DS_Store
 Thumbs.db

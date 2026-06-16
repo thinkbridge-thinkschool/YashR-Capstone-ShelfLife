@@ -15,8 +15,8 @@ param sqlAdminLogin      = 'sqladmin'
 // sqlAdminPassword is @secure() — pass via CLI flag or az.getSecret() Key Vault ref.
 param sqlAdminPassword   = 'REPLACE_WITH_SECRET'
 
-// App Service: Premium v3 P1v3 (2 vCores, 8 GB) — supports auto-scale, VNET, zone redundancy
-param appServiceSkuName  = 'P1v3'
+// App Service: Standard S2 (2 cores, 3.5 GB) — P1v3 not available on Student subscription
+param appServiceSkuName  = 'S2'
 
 // SQL: Standard S2 (50 DTUs, 250 GB storage) — suitable for moderate prod traffic
 param sqlDatabaseSkuName = 'S2'

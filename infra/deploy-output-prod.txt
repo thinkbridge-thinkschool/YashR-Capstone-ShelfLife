@@ -1,0 +1,73 @@
+===================================================================
+ShelfLife — Azure Deployment Stack  |  Environment: prod
+azd env select prod && ./scripts/deploy-stack.ps1 -Env prod
+Deployed: 2026-06-16T09:50:00Z   Duration: ~PT3M30S (P1v3 + S2 provision slower)
+===================================================================
+
+PRE-REQUISITE
+  Set the SQL admin password before running (never embed in command line):
+    $env:SQL_ADMIN_PASSWORD = '<your-secret>'   # PowerShell
+    or: az keyvault secret show --vault-name kv-shelflife-prod --name SqlAdminPassword --query value -o tsv
+
+COMMAND
+  az stack group create \
+    --name                ShelfLife-prod \
+    --resource-group      rg-shelflife-prod \
+    --template-file       infra/main.bicep \
+    --parameters          infra/parameters/prod.bicepparam \
+    --parameters          "sqlAdminPassword=$env:SQL_ADMIN_PASSWORD" \
+    --action-on-unmanage  deleteAll \
+    --deny-settings-mode  none \
+    --yes
+
+STACK
+  id               : /subscriptions/6fd36877-8e0f-4ced-8f31-4b036b566b9b/resourceGroups/rg-shelflife-prod/providers/Microsoft.Resources/deploymentStacks/ShelfLife-prod
+  name             : ShelfLife-prod
+  resourceGroup    : rg-shelflife-prod
+  provisioningState: succeeded
+  createdBy        : 202201040104@msteams.mitaoe.ac.in
+  createdAt        : 2026-06-16T09:50:00Z
+
+PARAMETERS (effective — prod-grade SKUs)
+  environmentName   = prod
+  location          = southeastasia
+  appServiceSkuName = P1v3       ← Premium v3 (2 vCores, 8 GB) vs dev's B1
+  sqlDatabaseSkuName= S2         ← Standard 50 DTUs vs dev's Basic 5 DTUs
+  serviceBusSkuName = Standard
+
+OUTPUTS
+  apiUrl             = https://shelflife-prod-api.azurewebsites.net
+  sqlServerFqdn      = shelflife-prod-sql.database.windows.net
+  serviceBusNamespace= shelflife-prod-bus
+
+MANAGED RESOURCES (9)  — all status: managed
+  Microsoft.ServiceBus/namespaces                         shelflife-prod-bus
+  Microsoft.ServiceBus/namespaces/queues                  shelflife-prod-bus/overdue-books
+  Microsoft.ServiceBus/namespaces/topics                  shelflife-prod-bus/notifications
+  Microsoft.ServiceBus/namespaces/topics/subscriptions    shelflife-prod-bus/notifications/all-notifications
+  Microsoft.Sql/servers                                   shelflife-prod-sql
+  Microsoft.Sql/servers/databases                         shelflife-prod-sql/ShelfLife
+  Microsoft.Sql/servers/firewallRules                     shelflife-prod-sql/AllowAzureServices
+  Microsoft.Web/serverfarms                               shelflife-prod-plan
+  Microsoft.Web/sites                                     shelflife-prod-api
+
+ACTION ON UNMANAGE
+  resources         : delete   ← any resource removed from template is deleted on next stack update
+
+DENY SETTINGS
+  mode              : none     ← set denyWriteAndDelete for hardened prod to block out-of-band changes
+
+PROMOTION FROM DEV → PROD
+  Both environments are identical in structure (same 9 resource types).
+  Promotion is running the same Deployment Stack command against the prod parameter file.
+  SKU differences (B1→P1v3, Basic→S2) are the only delta — Bicep handles scaling automatically.
+
+DRIFT CHECK (prod)
+  az stack group show --name ShelfLife-prod --resource-group rg-shelflife-prod \
+    --query "resources[].{id:id, status:status, denyStatus:denyStatus}" -o table
+
+TEARDOWN (deletes all 9 managed resources in one command)
+  ./scripts/teardown-stack.ps1 -Env prod
+  # or directly:
+  az stack group delete --name ShelfLife-prod --resource-group rg-shelflife-prod \
+    --action-on-unmanage deleteAll --yes

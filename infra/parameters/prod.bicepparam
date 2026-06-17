@@ -23,3 +23,7 @@ param sqlDatabaseSkuName = 'S2'
 
 // Service Bus: Standard — topics + queues; upgrade to Premium for VNET/dedicated capacity
 param serviceBusSkuName  = 'Standard'
+
+// Entra ID — same tenant, same app registration as dev (or create a separate prod app registration)
+param aadTenantId  = '7e394fc8-4b86-4cfe-810e-43f86f8bec47'
+param aadClientId  = 'e003ddf2-2a79-48de-9db1-2da4ea9893d3'

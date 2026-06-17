@@ -13,20 +13,20 @@ param skuName string
 @description('Fully qualified domain name of the SQL server.')
 param sqlServerFqdn string
 
-@description('SQL administrator login.')
-param sqlAdminLogin string
+@description('Fully qualified namespace of the Service Bus (e.g. shelflife-dev-bus.servicebus.windows.net).')
+param serviceBusNamespaceFqdn string
 
-@secure()
-@description('SQL administrator password.')
-param sqlAdminPassword string
+@description('Entra ID tenant ID (not a secret — it is a public identifier).')
+param aadTenantId string
 
-@secure()
-@description('Service Bus primary connection string.')
-param serviceBusConnectionString string
+@description('Entra ID application (client) ID registered for this API (not a secret).')
+param aadClientId string
 
 var planName = '${prefix}-plan'
-var appName = '${prefix}-api'
-var sqlConnectionString = 'Server=tcp:${sqlServerFqdn},1433;Database=ShelfLife;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};Encrypt=true;TrustServerCertificate=False;Connection Timeout=30;'
+var appName  = '${prefix}-api'
+
+// No username or password — DefaultAzureCredential supplies the token at runtime
+var sqlConnectionString = 'Server=tcp:${sqlServerFqdn},1433;Database=ShelfLife;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
 
 // ── App Service Plan ──────────────────────────────────────────────────────────
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
@@ -38,7 +38,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
   kind: 'linux'
   properties: {
-    reserved: true  // required for Linux
+    reserved: true
   }
 }
 
@@ -48,6 +48,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   location: location
   tags: tags
   kind: 'app,linux'
+  identity: {
+    type: 'SystemAssigned'   // MI principal ID is webApp.identity.principalId
+  }
   properties: {
     serverFarmId: appServicePlan.id
     httpsOnly: true
@@ -63,19 +66,33 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: ''  // set post-deploy when App Insights is wired up
+          value: ''
+        }
+        // Service Bus: namespace FQDN only — no SAS key
+        {
+          name: 'ServiceBus__FullyQualifiedNamespace'
+          value: serviceBusNamespaceFqdn
+        }
+        // Entra ID — tenant ID and client ID are public identifiers, not secrets
+        {
+          name: 'AzureAd__TenantId'
+          value: aadTenantId
+        }
+        {
+          name: 'AzureAd__ClientId'
+          value: aadClientId
+        }
+        {
+          name: 'AzureAd__Audience'
+          value: 'api://${aadClientId}'
         }
       ]
       connectionStrings: [
+        // SQL uses Active Directory Default auth — no password in the string
         {
           name: 'ShelfLife'
           connectionString: sqlConnectionString
           type: 'SQLAzure'
-        }
-        {
-          name: 'ServiceBus'
-          connectionString: serviceBusConnectionString
-          type: 'Custom'
         }
       ]
     }
@@ -83,5 +100,6 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
-output url string = 'https://${webApp.properties.defaultHostName}'
-output appName string = webApp.name
+output url         string = 'https://${webApp.properties.defaultHostName}'
+output appName     string = webApp.name
+output principalId string = webApp.identity.principalId

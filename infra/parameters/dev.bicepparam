@@ -24,3 +24,8 @@ param sqlDatabaseSkuName = 'Basic'
 
 // Service Bus: Standard required for topics (Notifications module)
 param serviceBusSkuName  = 'Standard'
+
+// Entra ID — register an app in Azure Portal → App registrations, then paste the IDs here.
+// These are public identifiers, not secrets. Safe to commit.
+param aadTenantId  = '7e394fc8-4b86-4cfe-810e-43f86f8bec47'
+param aadClientId  = 'e003ddf2-2a79-48de-9db1-2da4ea9893d3'

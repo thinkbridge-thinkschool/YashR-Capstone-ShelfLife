@@ -11,7 +11,7 @@ param location string = resourceGroup().location
 param sqlAdminLogin string
 
 @secure()
-@description('SQL administrator password. Pass via CLI or Key Vault reference — never hard-code.')
+@description('SQL administrator password. Used only to create the SQL server resource — never stored in app settings. Store the value in Key Vault manually after first deploy.')
 param sqlAdminPassword string
 
 @description('App Service Plan SKU (e.g. B1 for dev, P1v3 for prod).')
@@ -24,6 +24,12 @@ param sqlDatabaseSkuName string
 @allowed(['Standard', 'Premium'])
 param serviceBusSkuName string
 
+@description('Entra ID tenant ID. Public identifier — not a secret.')
+param aadTenantId string
+
+@description('Entra ID client (application) ID for this API. Public identifier — not a secret.')
+param aadClientId string
+
 var prefix = 'shelflife-${environmentName}'
 var tags = {
   environment: environmentName
@@ -31,7 +37,7 @@ var tags = {
   managedBy: 'Bicep'
 }
 
-// ── SQL ──────────────────────────────────────────────────────────────────────
+// ── SQL ───────────────────────────────────────────────────────────────────────
 module sqlModule 'modules/sql.bicep' = {
   name: 'deploy-sql'
   params: {
@@ -44,18 +50,10 @@ module sqlModule 'modules/sql.bicep' = {
   }
 }
 
-// ── Service Bus ───────────────────────────────────────────────────────────────
-module serviceBusModule 'modules/servicebus.bicep' = {
-  name: 'deploy-servicebus'
-  params: {
-    prefix: prefix
-    location: location
-    tags: tags
-    skuName: serviceBusSkuName
-  }
-}
-
-// ── API (App Service) ─────────────────────────────────────────────────────────
+// ── API — must deploy before Service Bus and Key Vault so its MI principal ID
+//         is available for the RBAC role assignments in those modules.
+//         Note: serviceBusNamespaceFqdn is computed, not taken from the
+//         servicebus module output, to avoid a circular dependency.
 module apiModule 'modules/api.bicep' = {
   name: 'deploy-api'
   params: {
@@ -64,13 +62,37 @@ module apiModule 'modules/api.bicep' = {
     tags: tags
     skuName: appServiceSkuName
     sqlServerFqdn: sqlModule.outputs.serverFqdn
-    sqlAdminLogin: sqlAdminLogin
-    sqlAdminPassword: sqlAdminPassword
-    serviceBusConnectionString: serviceBusModule.outputs.connectionString
+    serviceBusNamespaceFqdn: '${prefix}-bus.servicebus.windows.net'
+    aadTenantId: aadTenantId
+    aadClientId: aadClientId
+  }
+}
+
+// ── Service Bus — depends on apiModule for the MI principal ID ────────────────
+module serviceBusModule 'modules/servicebus.bicep' = {
+  name: 'deploy-servicebus'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+    skuName: serviceBusSkuName
+    webAppPrincipalId: apiModule.outputs.principalId
+  }
+}
+
+// ── Key Vault — depends on apiModule for the MI principal ID ──────────────────
+module kvModule 'modules/keyvault.bicep' = {
+  name: 'deploy-keyvault'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+    webAppPrincipalId: apiModule.outputs.principalId
   }
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
-output apiUrl string = apiModule.outputs.url
-output sqlServerFqdn string = sqlModule.outputs.serverFqdn
+output apiUrl              string = apiModule.outputs.url
+output sqlServerFqdn       string = sqlModule.outputs.serverFqdn
 output serviceBusNamespace string = serviceBusModule.outputs.namespaceName
+output keyVaultName        string = kvModule.outputs.keyVaultName

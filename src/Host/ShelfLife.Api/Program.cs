@@ -1,18 +1,16 @@
-﻿using Azure.Messaging.ServiceBus;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Azure.Identity;
+using Azure.Messaging.ServiceBus;
+using Microsoft.Identity.Web;
 using ShelfLife.Api.Endpoints;
-using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using ShelfLife.Catalog.Infrastructure;
 using ShelfLife.Identity.Infrastructure;
 using ShelfLife.Infrastructure.Messaging;
-using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Insights.Infrastructure;
 using ShelfLife.Lending.Infrastructure;
 using ShelfLife.Notifications.Infrastructure;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,31 +28,22 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddConsoleExporter());
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(opts =>
-    {
-        opts.MapInboundClaims = false;
-        opts.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
-        };
-    });
-builder.Services.AddAuthorization();
+// ── Auth — Entra ID validates tokens using public JWKS keys; no client secret ──
+builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Librarian", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("roles", "Librarian"));
+});
 
 // ── Service Bus ───────────────────────────────────────────────────────────────
-builder.Services.AddSingleton(new ServiceBusClient(
-    builder.Configuration.GetConnectionString("ServiceBus")));
+// Uses the namespace FQDN from config + DefaultAzureCredential (Managed Identity
+// in Azure, developer credential locally). No connection string / SAS key.
+builder.Services.AddSingleton(sp => new ServiceBusClient(
+    builder.Configuration["ServiceBus:FullyQualifiedNamespace"],
+    new DefaultAzureCredential()));
 builder.Services.AddScoped<IMessagePublisher, ServiceBusPublisher>();
-
-// ── Outbox relay ──────────────────────────────────────────────────────────────
-builder.Services.AddHostedService<OutboxRelayWorker>();
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 builder.Services.AddIdentityModule(builder.Configuration);

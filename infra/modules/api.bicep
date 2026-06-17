@@ -24,6 +24,7 @@ param aadClientId string
 
 var planName = '${prefix}-plan'
 var appName  = '${prefix}-api'
+var kvName   = '${prefix}-kv'   // must match keyvault.bicep naming convention
 
 // No username or password — DefaultAzureCredential supplies the token at runtime
 var sqlConnectionString = 'Server=tcp:${sqlServerFqdn},1433;Database=ShelfLife;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
@@ -65,8 +66,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'Production'
         }
         {
+          // Key Vault reference — App Service resolves this at runtime using its MI
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: ''
+          value: '@Microsoft.KeyVault(VaultName=${kvName};SecretName=appinsights-cs)'
         }
         // Service Bus: namespace FQDN only — no SAS key
         {

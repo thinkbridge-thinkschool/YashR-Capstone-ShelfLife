@@ -56,6 +56,3 @@ infra/**/*.json
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Screenshots (optional — remove if you want to track these)
-screenshots/

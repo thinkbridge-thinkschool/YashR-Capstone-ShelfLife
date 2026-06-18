@@ -10,6 +10,10 @@ param tags object
 @description('Principal ID of the App Service managed identity.')
 param webAppPrincipalId string
 
+@description('Application Insights connection string to store as a Key Vault secret.')
+@secure()
+param appInsightsConnectionString string
+
 var kvName = '${prefix}-kv'
 
 // Built-in: Key Vault Secrets User — allows Get/List on secrets (read-only)
@@ -41,6 +45,15 @@ resource miSecretsRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', kvSecretsUserRoleId)
     principalId: webAppPrincipalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// ── App Insights connection string secret (referenced by App Service as KV ref) ─
+resource aiConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'appinsights-cs'
+  parent: keyVault
+  properties: {
+    value: appInsightsConnectionString
   }
 }
 

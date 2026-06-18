@@ -37,6 +37,16 @@ var tags = {
   managedBy: 'Bicep'
 }
 
+// ── Application Insights + Log Analytics ─────────────────────────────────────
+module appInsightsModule 'modules/appinsights.bicep' = {
+  name: 'deploy-appinsights'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+  }
+}
+
 // ── SQL ───────────────────────────────────────────────────────────────────────
 module sqlModule 'modules/sql.bicep' = {
   name: 'deploy-sql'
@@ -80,7 +90,7 @@ module serviceBusModule 'modules/servicebus.bicep' = {
   }
 }
 
-// ── Key Vault — depends on apiModule for the MI principal ID ──────────────────
+// ── Key Vault — depends on apiModule (MI principal) + appInsights (conn string) ─
 module kvModule 'modules/keyvault.bicep' = {
   name: 'deploy-keyvault'
   params: {
@@ -88,6 +98,7 @@ module kvModule 'modules/keyvault.bicep' = {
     location: location
     tags: tags
     webAppPrincipalId: apiModule.outputs.principalId
+    appInsightsConnectionString: appInsightsModule.outputs.connectionString
   }
 }
 
@@ -96,3 +107,4 @@ output apiUrl              string = apiModule.outputs.url
 output sqlServerFqdn       string = sqlModule.outputs.serverFqdn
 output serviceBusNamespace string = serviceBusModule.outputs.namespaceName
 output keyVaultName        string = kvModule.outputs.keyVaultName
+output appInsightsName     string = appInsightsModule.outputs.appInsightsName

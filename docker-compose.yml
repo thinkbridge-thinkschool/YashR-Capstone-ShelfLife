@@ -1,4 +1,4 @@
-﻿services:
+services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
@@ -8,6 +8,13 @@
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+    # Use bash /dev/tcp instead of sqlcmd — works regardless of tools path
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1433' 2>/dev/null && echo ok || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
@@ -21,6 +28,8 @@
     image: datalust/seq:latest
     environment:
       ACCEPT_EULA: "Y"
+      # Seq 2025.x requires this on first run — opt out of auth for local dev
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
     ports:
       - "5341:5341"
       - "8081:80"
@@ -34,12 +43,18 @@
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__ShelfLife: "Server=sqlserver;Database=ShelfLife;User Id=sa;Password=ShelfLife_Dev!2024;TrustServerCertificate=True"
-      ServiceBus__ConnectionString: "UseDevelopmentStorage=true;DevelopmentStorageProxyUri=http://azurite"
+      ServiceBus__FullyQualifiedNamespace: ""
       Seq__ServerUrl: "http://seq:5341"
+      Jwt__Secret: "dev-only-secret-key-shelflife-2024-local!"
+      Jwt__Issuer: "shelflife-api"
+      Jwt__Audience: "shelflife-client"
     depends_on:
-      - sqlserver
-      - azurite
-      - seq
+      sqlserver:
+        condition: service_healthy
+      azurite:
+        condition: service_started
+      seq:
+        condition: service_started
 
   worker:
     build:
@@ -48,20 +63,13 @@
     environment:
       DOTNET_ENVIRONMENT: Development
       ConnectionStrings__ShelfLife: "Server=sqlserver;Database=ShelfLife;User Id=sa;Password=ShelfLife_Dev!2024;TrustServerCertificate=True"
-      ServiceBus__ConnectionString: "UseDevelopmentStorage=true;DevelopmentStorageProxyUri=http://azurite"
+      ServiceBus__FullyQualifiedNamespace: ""
       Seq__ServerUrl: "http://seq:5341"
     depends_on:
-      - sqlserver
-      - azurite
-
-  web:
-    build:
-      context: web/ShelfLife-ui
-      dockerfile: Dockerfile
-    ports:
-      - "4200:80"
-    depends_on:
-      - api
+      sqlserver:
+        condition: service_healthy
+      azurite:
+        condition: service_started
 
 volumes:
   sqlserver-data:

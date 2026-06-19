@@ -22,6 +22,9 @@ param aadTenantId string
 @description('Entra ID application (client) ID registered for this API (not a secret).')
 param aadClientId string
 
+@description('Resource ID of the integration subnet for App Service VNet Integration (outbound).')
+param integrationSubnetId string
+
 var planName = '${prefix}-plan'
 var appName  = '${prefix}-api'
 var kvName   = '${prefix}-kv'   // must match keyvault.bicep naming convention
@@ -60,6 +63,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: '1.2'
       http20Enabled: true
       ftpsState: 'Disabled'
+      // Route all outbound traffic from the app through the VNet so it can
+      // reach SQL and Key Vault over their private endpoints.
+      vnetRouteAllEnabled: true
       appSettings: [
         {
           name: 'ASPNETCORE_ENVIRONMENT'
@@ -98,6 +104,19 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         }
       ]
     }
+  }
+}
+
+// ── VNet Integration (Swift / regional) ──────────────────────────────────────
+// Links the App Service to the integration subnet so all outbound requests
+// (to SQL private endpoint, Key Vault private endpoint, Service Bus) flow
+// through the VNet rather than over the public internet.
+resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2023-12-01' = {
+  parent: webApp
+  name: 'virtualNetwork'
+  properties: {
+    subnetResourceId: integrationSubnetId
+    swiftSupported: true
   }
 }
 

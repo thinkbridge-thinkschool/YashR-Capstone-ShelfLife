@@ -47,7 +47,19 @@ module appInsightsModule 'modules/appinsights.bicep' = {
   }
 }
 
+// ── Virtual Network ───────────────────────────────────────────────────────────
+// Must deploy before SQL, Key Vault, and API so subnet IDs are available.
+module vnetModule 'modules/vnet.bicep' = {
+  name: 'deploy-vnet'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+  }
+}
+
 // ── SQL ───────────────────────────────────────────────────────────────────────
+// Private endpoint placed in the data subnet; public network access disabled.
 module sqlModule 'modules/sql.bicep' = {
   name: 'deploy-sql'
   params: {
@@ -57,13 +69,14 @@ module sqlModule 'modules/sql.bicep' = {
     adminLogin: sqlAdminLogin
     adminPassword: sqlAdminPassword
     databaseSkuName: sqlDatabaseSkuName
+    vnetId: vnetModule.outputs.vnetId
+    dataSubnetId: vnetModule.outputs.dataSubnetId
   }
 }
 
 // ── API — must deploy before Service Bus and Key Vault so its MI principal ID
 //         is available for the RBAC role assignments in those modules.
-//         Note: serviceBusNamespaceFqdn is computed, not taken from the
-//         servicebus module output, to avoid a circular dependency.
+//         VNet integration subnet wired in so outbound traffic stays private.
 module apiModule 'modules/api.bicep' = {
   name: 'deploy-api'
   params: {
@@ -75,6 +88,7 @@ module apiModule 'modules/api.bicep' = {
     serviceBusNamespaceFqdn: '${prefix}-bus.servicebus.windows.net'
     aadTenantId: aadTenantId
     aadClientId: aadClientId
+    integrationSubnetId: vnetModule.outputs.integrationSubnetId
   }
 }
 
@@ -90,7 +104,8 @@ module serviceBusModule 'modules/servicebus.bicep' = {
   }
 }
 
-// ── Key Vault — depends on apiModule (MI principal) + appInsights (conn string) ─
+// ── Key Vault — depends on apiModule (MI principal) + appInsights (conn string)
+//               Private endpoint placed in the data subnet; public access off.
 module kvModule 'modules/keyvault.bicep' = {
   name: 'deploy-keyvault'
   params: {
@@ -99,6 +114,8 @@ module kvModule 'modules/keyvault.bicep' = {
     tags: tags
     webAppPrincipalId: apiModule.outputs.principalId
     appInsightsConnectionString: appInsightsModule.outputs.connectionString
+    vnetId: vnetModule.outputs.vnetId
+    dataSubnetId: vnetModule.outputs.dataSubnetId
   }
 }
 
@@ -108,3 +125,4 @@ output sqlServerFqdn       string = sqlModule.outputs.serverFqdn
 output serviceBusNamespace string = serviceBusModule.outputs.namespaceName
 output keyVaultName        string = kvModule.outputs.keyVaultName
 output appInsightsName     string = appInsightsModule.outputs.appInsightsName
+output vnetName            string = '${prefix}-vnet'

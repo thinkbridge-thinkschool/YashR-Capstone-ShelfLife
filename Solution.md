@@ -19,36 +19,70 @@ Where I cannot show live output, I say so directly.
 
 All tests ran against `https://shelflife-dev-api.azurewebsites.net` (DOTNETCORE-10.0.7, deployment `6e92d6b7`).
 
+**Unit tests:**
+```
+Passed!  - Failed:     0, Passed:     8, Skipped:     0, Total:     8, Duration: 115 ms - ShelfLife.Lending.Domain.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 226 ms - ShelfLife.Catalog.Domain.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 430 ms - ShelfLife.Notifications.Application.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 851 ms - ShelfLife.Architecture.Tests.dll (net10.0)
+```
+
 **Register → 201 Created:**
 ```
-POST /api/v1/identity/register
-Body: {"email":"yash@shelflife.dev","password":"Test@1234","fullName":"Yash Rathi"}
-← HTTP 201   {"id":"cb0ae6a9-7541-45bc-95fa-2f981e5c508f"}
+=== REGISTER ===
+HTTP 201 Created
+{"id":"cc102811-0f94-4f4e-b31a-185c84bff5f4"}
 ```
 
 **Login → 200 OK + JWT:**
 ```
-POST /api/v1/identity/login
-Body: {"email":"yash@shelflife.dev","password":"Test@1234"}
-← HTTP 200   {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...","memberId":"cb0ae6a9-..."}
+=== LOGIN ===
+HTTP 200 OK
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYzEwMjgxMS0wZjk0LTRmNGUtYjMxYS0xODVjODRiZmY1ZjQiLCJlbWFpbCI6ImRlbW8yQHNoZWxmbGlmZS5kZXYiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJNZW1iZXIiLCJleHAiOjE3ODE5MjI4MzEsImlzcyI6InNoZWxmbGlmZS1hcGkiLCJhdWQiOiJzaGVsZmxpZmUtY2xpZW50In0.Z0AguhlXz7AheQB7EzErcR_bh9BIFkTTHlCa9ZqC7TQ","memberId":"cc102811-0f94-4f4e-b31a-185c84bff5f4"}
 ```
 
-**Rate limiter → 429 after 10 requests:**
+**Rate limiter → 429 fires at request 9:**
 ```
-POST /api/v1/identity/login × 12 (rapid fire, wrong credentials)
-  Requests 1–9  : HTTP 401  (wrong credentials, auth evaluated normally)
-  Request 10    : HTTP 429  (fixed-window limit hit — RequireRateLimiting("identity") fired)
-  Requests 11–12: HTTP 429  (still in rate-limit window)
+=== RATE LIMITING (12 rapid POST /api/v1/identity/login) ===
+Request 1  -> HTTP 401 Unauthorized
+Request 2  -> HTTP 401 Unauthorized
+Request 3  -> HTTP 401 Unauthorized
+Request 4  -> HTTP 401 Unauthorized
+Request 5  -> HTTP 401 Unauthorized
+Request 6  -> HTTP 401 Unauthorized
+Request 7  -> HTTP 401 Unauthorized
+Request 8  -> HTTP 401 Unauthorized
+Request 9  -> HTTP 429 429
+Request 10 -> HTTP 429 429
+Request 11 -> HTTP 429 429
+Request 12 -> HTTP 429 429
 ```
 
-**Security headers on live endpoint (`GET /api/v1/nonexistent`):**
+**Security headers (`GET /api/v1/nonexistent`):**
 ```
-HTTP 404
-X-Content-Type-Options  : nosniff
-X-Frame-Options         : DENY
-Referrer-Policy         : strict-origin-when-cross-origin
+=== SECURITY HEADERS (GET /api/v1/nonexistent) ===
+HTTP 404 NotFound
+X-Content-Type-Options : nosniff
+X-Frame-Options : DENY
+Referrer-Policy : strict-origin-when-cross-origin
 Content-Security-Policy : default-src 'none'; frame-ancestors 'none'
-Permissions-Policy      : geolocation=(), camera=(), microphone=()
+Permissions-Policy : geolocation=(), camera=(), microphone=()
+```
+
+**Private endpoints + infrastructure:**
+```
+=== PRIVATE ENDPOINTS ===
+{ "name": "shelflife-dev-sql-pe", "provisioningState": "Succeeded" }
+{ "name": "shelflife-dev-kv-pe",  "provisioningState": "Succeeded" }
+
+=== SQL PUBLIC NETWORK ACCESS ===
+{ "server": "shelflife-dev-sql", "publicNetworkAccess": "Disabled" }
+
+=== KEYVAULT PUBLIC NETWORK ACCESS ===
+{ "vault": "shelflife-dev-kv", "publicNetworkAccess": "Disabled" }
+
+=== APP SERVICE STATE ===
+{ "name": "shelflife-dev-api", "state": "Running", "url": "shelflife-dev-api.azurewebsites.net" }
 ```
 
 ---

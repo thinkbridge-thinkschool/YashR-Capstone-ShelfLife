@@ -4,14 +4,52 @@
 
 | Area | Status | Evidence |
 |------|--------|----------|
-| OpenAPI hardening (headers, versioning, rate limit, body limit) | ✅ Run locally against Docker Compose | Screenshots below |
+| OpenAPI hardening (headers, versioning, rate limit, body limit) | ✅ **Confirmed live on Azure** — register 201, login 200 + JWT, rate limit 429 at request 10 | Live API evidence below |
 | `Span<T>` ISBN validation | ✅ 26/26 unit tests pass | Test output below |
 | STRIDE threat model | ✅ Written — `docs/threat-model.md` | Document |
 | Private endpoints (Bicep IaC) | ✅ **Deployed to Azure** — SQL PE `Succeeded`, KV PE `Succeeded`, VNet integration active | Azure CLI output below |
 | ZAP baseline scan | ✅ Ran against Docker Compose (`http://localhost:8080`) — FAIL-NEW: 0, WARN-NEW: 1, PASS: 66 | `docs/zap-baseline.md` |
-| Azure App Service running | ✅ Running (`Site started` at 17:11 UTC) — security headers confirmed on live endpoint; `/api/v1/identity/login` returns 500 because SQL tables not yet created (managed identity needs `db_ddladmin` grant) | Startup log + curl evidence below |
+| Azure App Service running | ✅ **Fully working** — register 201, login 200 + JWT, security headers on all responses, rate limiter fires 429 at request 10 on live `azurewebsites.net` endpoint | Live API evidence below |
 
 Where I cannot show live output, I say so directly.
+
+---
+
+## Live Azure API Evidence
+
+All tests ran against `https://shelflife-dev-api.azurewebsites.net` (DOTNETCORE-10.0.7, deployment `6e92d6b7`).
+
+**Register → 201 Created:**
+```
+POST /api/v1/identity/register
+Body: {"email":"yash@shelflife.dev","password":"Test@1234","fullName":"Yash Rathi"}
+← HTTP 201   {"id":"cb0ae6a9-7541-45bc-95fa-2f981e5c508f"}
+```
+
+**Login → 200 OK + JWT:**
+```
+POST /api/v1/identity/login
+Body: {"email":"yash@shelflife.dev","password":"Test@1234"}
+← HTTP 200   {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...","memberId":"cb0ae6a9-..."}
+```
+
+**Rate limiter → 429 after 10 requests:**
+```
+POST /api/v1/identity/login × 12 (rapid fire, wrong credentials)
+  Requests 1–9  : HTTP 401  (wrong credentials, auth evaluated normally)
+  Request 10    : HTTP 429  (fixed-window limit hit — RequireRateLimiting("identity") fired)
+  Requests 11–12: HTTP 429  (still in rate-limit window)
+```
+
+**Security headers on live endpoint (`GET /api/v1/nonexistent`):**
+```
+HTTP 404
+X-Content-Type-Options  : nosniff
+X-Frame-Options         : DENY
+Referrer-Policy         : strict-origin-when-cross-origin
+Content-Security-Policy : default-src 'none'; frame-ancestors 'none'
+Permissions-Policy      : geolocation=(), camera=(), microphone=()
+```
 
 ---
 

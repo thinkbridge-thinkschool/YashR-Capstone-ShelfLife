@@ -9,7 +9,7 @@
 | STRIDE threat model | ✅ Written — `docs/threat-model.md` | Document |
 | Private endpoints (Bicep IaC) | ✅ **Deployed to Azure** — SQL PE `Succeeded`, KV PE `Succeeded`, VNet integration active | Azure CLI output below |
 | ZAP baseline scan | ✅ Ran against Docker Compose (`http://localhost:8080`) — FAIL-NEW: 0, WARN-NEW: 1, PASS: 66 | `docs/zap-baseline.md` |
-| Azure App Service running | ⚠️ App starts but API calls return 500 — managed identity needs `db_ddladmin` grant (SQL 15247) before `EnsureCreatedAsync` can create schemas | Deployment log note below |
+| Azure App Service running | ✅ Running (`Site started` at 17:11 UTC) — security headers confirmed on live endpoint; `/api/v1/identity/login` returns 500 because SQL tables not yet created (managed identity needs `db_ddladmin` grant) | Startup log + curl evidence below |
 
 Where I cannot show live output, I say so directly.
 
@@ -18,7 +18,7 @@ Where I cannot show live output, I say so directly.
 ## What Was Built
 
 1. **STRIDE-lite threat model** — 14 threats, 6 categories, risk ratings, fix status (`docs/threat-model.md`)
-2. **Private endpoint IaC** — SQL and Key Vault off the public internet in Bicep; App Service VNet integration wired. **Not deployed to Azure this session.**
+2. **Private endpoint IaC** — SQL and Key Vault off the public internet in Bicep; App Service VNet integration wired. **Deployed to Azure** (SQL PE + KV PE both `Succeeded`; DNS resolves to `10.0.1.4` from within VNet).
 3. **OpenAPI hardening** — JWT Bearer Swagger, `/api/v1/` versioning, rate limiting, security headers, 64 KB body cap, pagination clamping, `Guid.TryParse` guard
 4. **`Span<T>` ISBN parser** — zero-heap-allocation normalisation + checksum validation in `ValueObjects.cs`
 
@@ -251,6 +251,16 @@ PowerShell `Invoke-WebRequest` against `http://localhost:8080/swagger/index.html
 - `content-security-policy` ✅
 - `referrer-policy: strict-origin-when-cross-origin` ✅
 - `Server:` header — **absent** ✅
+
+**Also confirmed on the live Azure endpoint** (`GET https://shelflife-dev-api.azurewebsites.net/api/v1/nonexistent`) via .NET `HttpClient`:
+```
+HTTP 404
+X-Content-Type-Options     : nosniff
+X-Frame-Options            : DENY
+Referrer-Policy            : strict-origin-when-cross-origin
+Content-Security-Policy    : default-src 'none'; frame-ancestors 'none'
+```
+Security headers middleware is active in production at deployment version `6e92d6b7` (DOTNETCORE-10.0.7).
 
 ---
 

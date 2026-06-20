@@ -15,11 +15,14 @@ param sqlAdminLogin      = 'sqladmin'
 // sqlAdminPassword is @secure() — pass via CLI flag or az.getSecret() Key Vault ref.
 param sqlAdminPassword   = 'REPLACE_WITH_SECRET'
 
-// App Service: Standard S2 (2 cores, 3.5 GB) — P1v3 not available on Student subscription
-param appServiceSkuName  = 'S2'
+// App Service: Basic B1 (1 core, 1.75 GB) — matches dev tier; VNet Integration works on B1 Linux.
+// Upgrade to S2 only if auto-scaling or deployment slots are needed post-capstone.
+param appServiceSkuName  = 'B1'
 
-// SQL: Standard S2 (50 DTUs, 250 GB storage) — suitable for moderate prod traffic
-param sqlDatabaseSkuName = 'S2'
+// SQL: Basic (5 DTUs, 2 GB) — matches dev tier; sufficient for capstone demo data volume.
+// Private endpoint and Managed Identity auth are DTU-tier agnostic — no security regression.
+// Verify data size < 2 GB before deploying: SELECT SUM(reserved_page_count)*8.0/1024/1024 FROM sys.dm_db_partition_stats
+param sqlDatabaseSkuName = 'Basic'
 
 // Service Bus: Standard — topics + queues; upgrade to Premium for VNET/dedicated capacity
 param serviceBusSkuName  = 'Standard'

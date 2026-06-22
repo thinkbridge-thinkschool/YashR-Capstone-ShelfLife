@@ -55,6 +55,22 @@ Write domain events to an `OutboxMessages` table as part of the same EF Core tra
 
 ---
 
+## Mechanism
+
+When a command handler calls `SaveChangesAsync()`, the `ShelfLifeDbContext` override intercepts the save, serializes each pending domain event from `AggregateRoot._domainEvents` into a JSON payload, and writes one `OutboxMessages` row per event — in the same database transaction as the business operation. The transaction either commits both the business entity change and the outbox row together, or rolls both back. There is no state where one succeeds without the other.
+
+`OutboxRelayWorker` (a .NET `BackgroundService`) wakes every 5 seconds, queries for rows where `ProcessedAt IS NULL`, and for each row: deserializes the payload, publishes to the Azure Service Bus topic named in `TopicName`, then marks the row `ProcessedAt = UtcNow`. On publish failure it stores the error in the `Error` column and increments `RetryCount`. The worker loops until the application shuts down.
+
+Consumer handlers (`BookBorrowedNotificationHandler`, `HoldReadyNotificationHandler`, `LoanOverdueNotificationHandler`) each call `IIdempotencyService.HasBeenProcessedAsync(eventId)` before acting, then mark the event processed after sending. This guards against the at-least-once delivery guarantee producing a duplicate notification.
+
+---
+
+## Why This Decision Over Option A
+
+ShelfLife has eight command handlers coordinating across five separate DbContexts (Catalog, Lending, Identity, Insights, Notifications). With direct publish, every handler would need its own try/catch: publish first, and if the EF Core commit then fails, attempt a compensating delete or accept the orphaned event. That logic would be duplicated eight times, would be untested, and would silently fail differently in each handler depending on which DbContext was mid-transaction. The Outbox centralises that reliability contract in one place — `OutboxRelayWorker` — so every handler gets the same atomicity guarantee without any handler knowing Service Bus exists.
+
+---
+
 ## Rationale
 
 - The SQL transaction is the only atomicity boundary available without introducing a distributed transaction coordinator. Writing `OutboxMessages` in the same transaction as the business operation means a commit always produces an event and a rollback never does.
@@ -68,21 +84,21 @@ Write domain events to an `OutboxMessages` table as part of the same EF Core tra
 
 ### Positive
 
-- Every committed business operation reliably produces the corresponding integration events
-- Command handlers remain free of direct Service Bus dependencies
+- Every committed business operation reliably produces the corresponding integration events — no handler can accidentally skip publication
+- Command handlers have no direct Service Bus dependency; they are testable without a live broker
 - Failure and retry logic is owned in one place
 
-### Negative
+### Negative (Open Risks)
 
 - `OutboxRelayWorker` is a new single point of failure: if it crashes and does not restart, events queue indefinitely with no alerting
-- No dead-letter strategy — messages that repeatedly fail to publish have no escalation path
-- No exponential backoff — the relay retries at a fixed 5-second cadence regardless of failure type
-- The relay worker currently has no integration tests; a dispatch bug is invisible until it surfaces as message loss in production
+- No dead-letter strategy — messages that repeatedly fail to publish have no escalation path and will block indefinitely
+- No exponential backoff — the relay retries at a fixed 5-second cadence regardless of failure type or error severity
+- No integration tests — a dispatch bug is invisible until it surfaces as silent message loss in production
 - Latency is eventual: a borrow confirmation email may arrive up to 5 seconds after the operation completes
 
-### Risks to Address (Days 29–30)
+### After Days 29–30 Address the Open Risks
 
-- Add exponential backoff (max 5 retries, 2× delay) to `OutboxRelayWorker`
-- Add a `DeadLetterMessages` table for messages that exceed the retry limit
-- Add an Application Insights alert when dead-letter count exceeds zero
-- Add integration tests for the full outbox → Service Bus → consumer handler path using Azurite
+- Exponential backoff (max 5 retries, 2× delay) removes the fixed-cadence hammering on a broken broker connection
+- A `DeadLetterMessages` table with an Application Insights alert on count > 0 means a stuck message surfaces as an observable incident, not a silent gap in the notifications stream
+- Integration tests covering the full path (OutboxMessages row written → relay dispatches → consumer handler invoked) mean a dispatch bug fails CI before it reaches production
+- Once these three are in place, the Outbox pattern delivers on its guarantee end to end — not just at the write side, but through to confirmed consumer receipt

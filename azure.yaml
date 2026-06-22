@@ -1,19 +1,34 @@
-﻿name: ShelfLife
+name: ShelfLife
 metadata:
   template: ShelfLife@0.0.1
+
+# azd reads this section to locate and run the Bicep templates during 'azd provision'.
+# Deployment is wrapped in an Azure Deployment Stack (see scripts/deploy-stack.ps1)
+# so every managed resource is tracked atomically — teardown and drift detection are clean.
+infra:
+  provider: bicep
+  path: infra
+  module: main
 
 services:
   api:
     project: src/Host/ShelfLife.Api/ShelfLife.Api.csproj
     language: csharp
-    host: containerapp
+    host: appservice
+    resourceName: shelflife-${AZURE_ENV_NAME}-api
 
-  worker:
-    project: Workers/ShelfLife.OverdueWorker/ShelfLife.OverdueWorker.csproj
-    language: csharp
-    host: containerapp
+# Hooks wire azd lifecycle events to the Deployment-Stacks script.
+# preprovision  → creates the resource group if it doesn't exist
+# postprovision → wraps the completed Bicep run in (or promotes to) a Deployment Stack
+hooks:
+  preprovision:
+    shell: pwsh
+    run: ./scripts/ensure-resource-group.ps1
+    interactive: false
+    continueOnError: false
 
-  web:
-    project: web/ShelfLife-ui
-    language: js
-    host: staticwebapp
+  postprovision:
+    shell: pwsh
+    run: ./scripts/deploy-stack.ps1
+    interactive: false
+    continueOnError: false

@@ -11,7 +11,14 @@ param tags object
 @allowed(['Standard', 'Premium'])
 param skuName string
 
+@description('Principal ID of the App Service managed identity.')
+param webAppPrincipalId string
+
 var namespaceName = '${prefix}-bus'
+
+// Built-in roles: Azure Service Bus Data Sender / Data Receiver
+var sbDataSenderRoleId   = '69a216fc-b8fb-44d8-bc22-1f3c2cd27a39'
+var sbDataReceiverRoleId = '4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0'
 
 // ── Namespace ─────────────────────────────────────────────────────────────────
 resource namespace 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
@@ -23,11 +30,11 @@ resource namespace 'Microsoft.ServiceBus/namespaces@2021-11-01' = {
     tier: skuName
   }
   properties: {
-    disableLocalAuth: false
+    disableLocalAuth: true   // reject SAS-key connections; MI only
   }
 }
 
-// ── Queue: overdue-books (consumed by ShelfLife.OverdueWorker) ────────────────
+// ── Queue: overdue-books ──────────────────────────────────────────────────────
 resource overdueQueue 'Microsoft.ServiceBus/namespaces/queues@2021-11-01' = {
   parent: namespace
   name: 'overdue-books'
@@ -39,7 +46,7 @@ resource overdueQueue 'Microsoft.ServiceBus/namespaces/queues@2021-11-01' = {
   }
 }
 
-// ── Topic: notifications (fanned out to Notifications module) ─────────────────
+// ── Topic: notifications ──────────────────────────────────────────────────────
 resource notificationsTopic 'Microsoft.ServiceBus/namespaces/topics@2021-11-01' = {
   parent: namespace
   name: 'notifications'
@@ -59,11 +66,27 @@ resource allNotificationsSubscription 'Microsoft.ServiceBus/namespaces/topics/su
   }
 }
 
+// ── RBAC: App Service MI can send and receive on this namespace ───────────────
+resource senderRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(namespace.id, webAppPrincipalId, sbDataSenderRoleId)
+  scope: namespace
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', sbDataSenderRoleId)
+    principalId: webAppPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource receiverRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(namespace.id, webAppPrincipalId, sbDataReceiverRoleId)
+  scope: namespace
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', sbDataReceiverRoleId)
+    principalId: webAppPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // ── Outputs ───────────────────────────────────────────────────────────────────
 output namespaceName string = namespace.name
-
-@secure()
-output connectionString string = listKeys(
-  '${namespace.id}/authorizationRules/RootManageSharedAccessKey',
-  '2021-11-01'
-).primaryConnectionString
+output namespaceFqdn string = '${namespace.name}.servicebus.windows.net'

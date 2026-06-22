@@ -75,4 +75,35 @@ public sealed class BookTitleTests
         var isbn = Isbn.Create("978-0-13-235088-4");
         isbn.Value.Should().Be("9780132350884");
     }
+
+    [Fact]
+    public void Isbn10_ValidCheckDigit_Accepted()
+    {
+        // 0-19-852663-6 is a known valid ISBN-10 (Oxford English Dictionary)
+        var isbn = Isbn.Create("0-19-852663-6");
+        isbn.Value.Should().Be("0198526636");
+    }
+
+    [Fact]
+    public void Isbn10_InvalidCheckDigit_Throws()
+    {
+        // last digit changed from 6 → 7
+        var act = () => Isbn.Create("0198526637");
+        act.Should().Throw<ArgumentException>().WithMessage("*check digit*");
+    }
+
+    [Fact]
+    public void Isbn13_InvalidCheckDigit_Throws()
+    {
+        // last digit changed from 4 → 5
+        var act = () => Isbn.Create("9780132350885");
+        act.Should().Throw<ArgumentException>().WithMessage("*check digit*");
+    }
+
+    [Fact]
+    public void Isbn_Empty_Throws()
+    {
+        var act = () => Isbn.Create("   ");
+        act.Should().Throw<ArgumentException>();
+    }
 }

@@ -11,7 +11,7 @@ param location string = resourceGroup().location
 param sqlAdminLogin string
 
 @secure()
-@description('SQL administrator password. Pass via CLI or Key Vault reference — never hard-code.')
+@description('SQL administrator password. Used only to create the SQL server resource — never stored in app settings. Store the value in Key Vault manually after first deploy.')
 param sqlAdminPassword string
 
 @description('App Service Plan SKU (e.g. B1 for dev, P1v3 for prod).')
@@ -24,6 +24,12 @@ param sqlDatabaseSkuName string
 @allowed(['Standard', 'Premium'])
 param serviceBusSkuName string
 
+@description('Entra ID tenant ID. Public identifier — not a secret.')
+param aadTenantId string
+
+@description('Entra ID client (application) ID for this API. Public identifier — not a secret.')
+param aadClientId string
+
 var prefix = 'shelflife-${environmentName}'
 var tags = {
   environment: environmentName
@@ -31,7 +37,29 @@ var tags = {
   managedBy: 'Bicep'
 }
 
-// ── SQL ──────────────────────────────────────────────────────────────────────
+// ── Application Insights + Log Analytics ─────────────────────────────────────
+module appInsightsModule 'modules/appinsights.bicep' = {
+  name: 'deploy-appinsights'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+  }
+}
+
+// ── Virtual Network ───────────────────────────────────────────────────────────
+// Must deploy before SQL, Key Vault, and API so subnet IDs are available.
+module vnetModule 'modules/vnet.bicep' = {
+  name: 'deploy-vnet'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+  }
+}
+
+// ── SQL ───────────────────────────────────────────────────────────────────────
+// Private endpoint placed in the data subnet; public network access disabled.
 module sqlModule 'modules/sql.bicep' = {
   name: 'deploy-sql'
   params: {
@@ -41,21 +69,14 @@ module sqlModule 'modules/sql.bicep' = {
     adminLogin: sqlAdminLogin
     adminPassword: sqlAdminPassword
     databaseSkuName: sqlDatabaseSkuName
+    vnetId: vnetModule.outputs.vnetId
+    dataSubnetId: vnetModule.outputs.dataSubnetId
   }
 }
 
-// ── Service Bus ───────────────────────────────────────────────────────────────
-module serviceBusModule 'modules/servicebus.bicep' = {
-  name: 'deploy-servicebus'
-  params: {
-    prefix: prefix
-    location: location
-    tags: tags
-    skuName: serviceBusSkuName
-  }
-}
-
-// ── API (App Service) ─────────────────────────────────────────────────────────
+// ── API — must deploy before Service Bus and Key Vault so its MI principal ID
+//         is available for the RBAC role assignments in those modules.
+//         VNet integration subnet wired in so outbound traffic stays private.
 module apiModule 'modules/api.bicep' = {
   name: 'deploy-api'
   params: {
@@ -64,13 +85,44 @@ module apiModule 'modules/api.bicep' = {
     tags: tags
     skuName: appServiceSkuName
     sqlServerFqdn: sqlModule.outputs.serverFqdn
-    sqlAdminLogin: sqlAdminLogin
-    sqlAdminPassword: sqlAdminPassword
-    serviceBusConnectionString: serviceBusModule.outputs.connectionString
+    serviceBusNamespaceFqdn: '${prefix}-bus.servicebus.windows.net'
+    aadTenantId: aadTenantId
+    aadClientId: aadClientId
+    integrationSubnetId: vnetModule.outputs.integrationSubnetId
+  }
+}
+
+// ── Service Bus — depends on apiModule for the MI principal ID ────────────────
+module serviceBusModule 'modules/servicebus.bicep' = {
+  name: 'deploy-servicebus'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+    skuName: serviceBusSkuName
+    webAppPrincipalId: apiModule.outputs.principalId
+  }
+}
+
+// ── Key Vault — depends on apiModule (MI principal) + appInsights (conn string)
+//               Private endpoint placed in the data subnet; public access off.
+module kvModule 'modules/keyvault.bicep' = {
+  name: 'deploy-keyvault'
+  params: {
+    prefix: prefix
+    location: location
+    tags: tags
+    webAppPrincipalId: apiModule.outputs.principalId
+    appInsightsConnectionString: appInsightsModule.outputs.connectionString
+    vnetId: vnetModule.outputs.vnetId
+    dataSubnetId: vnetModule.outputs.dataSubnetId
   }
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
-output apiUrl string = apiModule.outputs.url
-output sqlServerFqdn string = sqlModule.outputs.serverFqdn
+output apiUrl              string = apiModule.outputs.url
+output sqlServerFqdn       string = sqlModule.outputs.serverFqdn
 output serviceBusNamespace string = serviceBusModule.outputs.namespaceName
+output keyVaultName        string = kvModule.outputs.keyVaultName
+output appInsightsName     string = appInsightsModule.outputs.appInsightsName
+output vnetName            string = '${prefix}-vnet'

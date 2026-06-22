@@ -12,8 +12,13 @@ public static class IdentityEndpoints
             RegisterMemberHandler handler,
             CancellationToken ct) =>
         {
+            if (string.IsNullOrWhiteSpace(cmd?.Email) ||
+                string.IsNullOrWhiteSpace(cmd?.Password) ||
+                string.IsNullOrWhiteSpace(cmd?.FullName))
+                return Results.BadRequest("Email, password, and name are required.");
+
             var result = await handler.HandleAsync(cmd, ct);
-            return result.IsSuccess ? Results.Created($"/api/identity/{result.Value}", new { id = result.Value })
+            return result.IsSuccess ? Results.Created($"/api/v1/identity/{result.Value}", new { id = result.Value })
                                     : Results.BadRequest(result.Error);
         });
 
@@ -22,6 +27,9 @@ public static class IdentityEndpoints
             LoginHandler handler,
             CancellationToken ct) =>
         {
+            if (string.IsNullOrWhiteSpace(cmd?.Email) || string.IsNullOrWhiteSpace(cmd?.Password))
+                return Results.BadRequest("Email and password are required.");
+
             var result = await handler.HandleAsync(cmd, ct);
             return result.IsSuccess ? Results.Ok(result.Value)
                                     : Results.Unauthorized();

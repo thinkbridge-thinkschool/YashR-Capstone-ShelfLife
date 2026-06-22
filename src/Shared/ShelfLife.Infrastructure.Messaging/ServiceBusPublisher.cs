@@ -1,5 +1,6 @@
-﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace ShelfLife.Infrastructure.Messaging;
@@ -25,6 +26,17 @@ public sealed class ServiceBusPublisher : IMessagePublisher
             ContentType = "application/json",
             Subject = typeof(T).Name
         };
+
+        // Propagate W3C TraceContext so any consumer can link back to this trace.
+        // The consumer reads these properties and calls Activity.SetParentId()
+        // before starting its own span, stitching API → worker in a single trace.
+        var activity = Activity.Current;
+        if (activity != null)
+        {
+            serviceBusMessage.ApplicationProperties["traceparent"] = activity.Id;
+            if (!string.IsNullOrEmpty(activity.TraceStateString))
+                serviceBusMessage.ApplicationProperties["tracestate"] = activity.TraceStateString;
+        }
 
         await sender.SendMessageAsync(serviceBusMessage, cancellationToken);
         _logger.LogInformation("Published {MessageType} to {Topic}", typeof(T).Name, topicName);

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ShelfLife.Lending.Application;
 using System.Security.Claims;
 
@@ -14,10 +14,16 @@ public static class LendingEndpoints
             ClaimsPrincipal user,
             CancellationToken ct) =>
         {
-            var memberId = Guid.Parse(user.FindFirstValue("sub")!);
+            // Guard against a malformed or absent 'sub' claim (E-03 in threat model).
+            // Entra-issued tokens always carry a valid GUID sub; dev HS256 tokens
+            // might not — return 401 rather than letting FormatException bubble to a 500.
+            if (!Guid.TryParse(user.FindFirstValue("sub"), out var memberId))
+                return Results.Unauthorized();
+
             var result = await handler.HandleAsync(new BorrowBookCommand(memberId, req.BookTitleId), ct);
-            return result.IsSuccess ? Results.Created($"/api/lending/loans/{result.Value.LoanId}", result.Value)
-                                    : Results.BadRequest(result.Error);
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/lending/loans/{result.Value.LoanId}", result.Value)
+                : Results.BadRequest(result.Error);
         });
 
         group.MapPost("/loans/{loanId:guid}/return", async (
@@ -35,10 +41,13 @@ public static class LendingEndpoints
             ClaimsPrincipal user,
             CancellationToken ct) =>
         {
-            var memberId = Guid.Parse(user.FindFirstValue("sub")!);
+            if (!Guid.TryParse(user.FindFirstValue("sub"), out var memberId))
+                return Results.Unauthorized();
+
             var result = await handler.HandleAsync(new PlaceHoldCommand(memberId, req.BookTitleId), ct);
-            return result.IsSuccess ? Results.Created($"/api/lending/holds/{result.Value}", new { id = result.Value })
-                                    : Results.BadRequest(result.Error);
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/lending/holds/{result.Value}", new { id = result.Value })
+                : Results.BadRequest(result.Error);
         });
 
         return group;

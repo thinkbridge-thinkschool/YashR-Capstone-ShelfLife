@@ -1,0 +1,66 @@
+===================================================================
+ShelfLife — Azure Deployment Stack  |  Environment: dev
+azd env select dev && ./scripts/deploy-stack.ps1 -Env dev
+Deployed: 2026-06-16T09:29:26Z   Duration: PT1M15.497215S
+===================================================================
+
+COMMAND
+  az stack group create \
+    --name                ShelfLife-dev \
+    --resource-group      rg-shelflife-dev \
+    --template-file       infra/main.bicep \
+    --parameters          infra/parameters/dev.bicepparam \
+    --parameters          "sqlAdminPassword=<secret>" \
+    --action-on-unmanage  deleteAll \
+    --deny-settings-mode  none \
+    --yes
+
+STACK
+  id               : /subscriptions/6fd36877-8e0f-4ced-8f31-4b036b566b9b/resourceGroups/rg-shelflife-dev/providers/Microsoft.Resources/deploymentStacks/ShelfLife-dev
+  name             : ShelfLife-dev
+  resourceGroup    : rg-shelflife-dev
+  provisioningState: succeeded
+  correlationId    : 8e069309-face-407c-9d73-364f3560ac1d
+  createdBy        : 202201040104@msteams.mitaoe.ac.in
+  createdAt        : 2026-06-16T09:29:26Z
+
+PARAMETERS (effective)
+  environmentName   = dev
+  location          = southeastasia
+  appServiceSkuName = B1
+  sqlDatabaseSkuName= Basic
+  serviceBusSkuName = Standard
+
+OUTPUTS
+  apiUrl             = https://shelflife-dev-api.azurewebsites.net
+  sqlServerFqdn      = shelflife-dev-sql.database.windows.net
+  serviceBusNamespace= shelflife-dev-bus
+
+MANAGED RESOURCES (9)  — all status: managed
+  Microsoft.ServiceBus/namespaces                         shelflife-dev-bus
+  Microsoft.ServiceBus/namespaces/queues                  shelflife-dev-bus/overdue-books
+  Microsoft.ServiceBus/namespaces/topics                  shelflife-dev-bus/notifications
+  Microsoft.ServiceBus/namespaces/topics/subscriptions    shelflife-dev-bus/notifications/all-notifications
+  Microsoft.Sql/servers                                   shelflife-dev-sql
+  Microsoft.Sql/servers/databases                         shelflife-dev-sql/ShelfLife
+  Microsoft.Sql/servers/firewallRules                     shelflife-dev-sql/AllowAzureServices
+  Microsoft.Web/serverfarms                               shelflife-dev-plan
+  Microsoft.Web/sites                                     shelflife-dev-api
+
+ACTION ON UNMANAGE
+  resources         : delete   ← resources removed from template are deleted on next stack update
+  resourceGroups    : delete
+  managementGroups  : delete
+
+DENY SETTINGS
+  mode              : none     ← dev allows manual writes; set denyWriteAndDelete on prod
+
+DRIFT CHECK
+  az stack group show --name ShelfLife-dev --resource-group rg-shelflife-dev
+  Any resource modified outside the stack appears as drifted in 'resources[].denyStatus'.
+
+TEARDOWN (deletes all 9 managed resources in one command)
+  ./scripts/teardown-stack.ps1 -Env dev
+  # or directly:
+  az stack group delete --name ShelfLife-dev --resource-group rg-shelflife-dev \
+    --action-on-unmanage deleteAll --yes

@@ -1,543 +1,119 @@
-# Day 27 — Security Pass: Solution
+# Day 28 — Design Review + ADR: Solution
 
-## Honest Scope Statement
+## Design Review
 
-| Area | Status | Evidence |
-|------|--------|----------|
-| OpenAPI hardening (headers, versioning, rate limit, body limit) | ✅ **Confirmed live on Azure** — register 201, login 200 + JWT, rate limit 429 at request 10 | Live API evidence below |
-| `Span<T>` ISBN validation | ✅ 26/26 unit tests pass | Test output below |
-| STRIDE threat model | ✅ Written — `docs/threat-model.md` | Document |
-| Private endpoints (Bicep IaC) | ✅ **Deployed to Azure** — SQL PE `Succeeded`, KV PE `Succeeded`, VNet integration active | Azure CLI output below |
-| ZAP baseline scan | ✅ Ran against Docker Compose (`http://localhost:8080`) — FAIL-NEW: 0, WARN-NEW: 1, PASS: 66 | `docs/zap-baseline.md` |
-| Azure App Service running | ✅ **Fully working** — register 201, login 200 + JWT, security headers on all responses, rate limiter fires 429 at request 10 on live `azurewebsites.net` endpoint | Live API evidence below |
+### Strengths
 
-Where I cannot show live output, I say so directly.
+**Domain model earns its complexity.** BookTitle and Loan aggregates enforce real invariants — no duplicate barcodes, no over-lending, overdue detection as a pure value-object predicate. NetArchTest catches layer violations at compile time, not lint time.
 
----
+**Security posture is production-grade.** Private endpoints on SQL and Key Vault, `publicNetworkAccess: Disabled`, TLS 1.2 enforced, rate limiting validated live (429 fires at request 9), all four ZAP Medium alerts cleared. STRIDE-lite documents 14 threats with applied mitigations.
 
-## Live Azure API Evidence
+**Outbox gives honest delivery guarantees.** Domain events write atomically with the business operation. OutboxRelayWorker forwards to Service Bus separately. Notification handlers carry idempotency guards. The system tolerates crashes without losing or duplicating events.
 
-All tests ran against `https://shelflife-dev-api.azurewebsites.net` (DOTNETCORE-10.0.7, deployment `6e92d6b7`).
+**Infrastructure is fully code-defined.** Bicep modules for VNet, SQL private endpoint, Key Vault network ACLs, App Service VNet integration, and Application Insights. Separate dev/prod parameter files with SKU promotion. No manual portal steps.
 
-**Unit tests:**
-```
-Passed!  - Failed:     0, Passed:     8, Skipped:     0, Total:     8, Duration: 115 ms - ShelfLife.Lending.Domain.Tests.dll (net10.0)
-Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 226 ms - ShelfLife.Catalog.Domain.Tests.dll (net10.0)
-Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 430 ms - ShelfLife.Notifications.Application.Tests.dll (net10.0)
-Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 851 ms - ShelfLife.Architecture.Tests.dll (net10.0)
-```
+**Architecture is enforcement-first.** Four NetArchTest rules prevent domain-to-infrastructure and cross-module dependencies from compiling. Clean Architecture is a structural guarantee, not a naming convention.
 
-**Register → 201 Created:**
-```
-=== REGISTER ===
-HTTP 201 Created
-{"id":"cc102811-0f94-4f4e-b31a-185c84bff5f4"}
-```
+### Weaknesses
 
-**Login → 200 OK + JWT:**
-```
-=== LOGIN ===
-HTTP 200 OK
-{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYzEwMjgxMS0wZjk0LTRmNGUtYjMxYS0xODVjODRiZmY1ZjQiLCJlbWFpbCI6ImRlbW8yQHNoZWxmbGlmZS5kZXYiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJNZW1iZXIiLCJleHAiOjE3ODE5MjI4MzEsImlzcyI6InNoZWxmbGlmZS1hcGkiLCJhdWQiOiJzaGVsZmxpZmUtY2xpZW50In0.Z0AguhlXz7AheQB7EzErcR_bh9BIFkTTHlCa9ZqC7TQ","memberId":"cc102811-0f94-4f4e-b31a-185c84bff5f4"}
-```
+**Application handlers have zero test coverage.** All eight command handlers — BorrowBook, ReturnBook, PlaceHold, Register, Login, AddBook, AddCopy, TopTitles — are untested. Cross-context coordination lives here.
 
-**Rate limiter → 429 fires at request 9:**
-```
-=== RATE LIMITING (12 rapid POST /api/v1/identity/login) ===
-Request 1  -> HTTP 401 Unauthorized
-Request 2  -> HTTP 401 Unauthorized
-Request 3  -> HTTP 401 Unauthorized
-Request 4  -> HTTP 401 Unauthorized
-Request 5  -> HTTP 401 Unauthorized
-Request 6  -> HTTP 401 Unauthorized
-Request 7  -> HTTP 401 Unauthorized
-Request 8  -> HTTP 401 Unauthorized
-Request 9  -> HTTP 429 429
-Request 10 -> HTTP 429 429
-Request 11 -> HTTP 429 429
-Request 12 -> HTTP 429 429
-```
+**Integration tests are excluded from CI.** The workflow explicitly passes `Category!=Integration`. There is no automated proof the system works against a real database or a real Service Bus.
 
-**Security headers (`GET /api/v1/nonexistent`):**
-```
-=== SECURITY HEADERS (GET /api/v1/nonexistent) ===
-HTTP 404 NotFound
-X-Content-Type-Options : nosniff
-X-Frame-Options : DENY
-Referrer-Policy : strict-origin-when-cross-origin
-Content-Security-Policy : default-src 'none'; frame-ancestors 'none'
-Permissions-Policy : geolocation=(), camera=(), microphone=()
-```
+**OutboxRelayWorker has no dead-letter strategy.** Fixed 5-second polling with no backpressure, no exponential backoff on publish failure, and no alerting when message queue depth grows.
 
-**Private endpoints + infrastructure:**
-```
-=== PRIVATE ENDPOINTS ===
-{ "name": "shelflife-dev-sql-pe", "provisioningState": "Succeeded" }
-{ "name": "shelflife-dev-kv-pe",  "provisioningState": "Succeeded" }
+**Email delivery is unimplemented.** `INotificationSender` is mocked in every test. No SMTP or Azure Communication Services implementation exists. Notifications are a no-op in every deployed environment.
 
-=== SQL PUBLIC NETWORK ACCESS ===
-{ "server": "shelflife-dev-sql", "publicNetworkAccess": "Disabled" }
-
-=== KEYVAULT PUBLIC NETWORK ACCESS ===
-{ "vault": "shelflife-dev-kv", "publicNetworkAccess": "Disabled" }
-
-=== APP SERVICE STATE ===
-{ "name": "shelflife-dev-api", "state": "Running", "url": "shelflife-dev-api.azurewebsites.net" }
-```
+**Rate limiting does not protect per member.** The partition key is the remote IP. One authenticated member behind a shared IP can deplete another member's quota.
 
 ---
 
-## What Was Built
+## Top Critique
 
-1. **STRIDE-lite threat model** — 14 threats, 6 categories, risk ratings, fix status (`docs/threat-model.md`)
-2. **Private endpoint IaC** — SQL and Key Vault off the public internet in Bicep; App Service VNet integration wired. **Deployed to Azure** (SQL PE + KV PE both `Succeeded`; DNS resolves to `10.0.1.4` from within VNet).
-3. **OpenAPI hardening** — JWT Bearer Swagger, `/api/v1/` versioning, rate limiting, security headers, 64 KB body cap, pagination clamping, `Guid.TryParse` guard
-4. **`Span<T>` ISBN parser** — zero-heap-allocation normalisation + checksum validation in `ValueObjects.cs`
+**Critique:**
+The domain tests prove aggregate invariants. The architecture tests prove module isolation. Nothing proves that the handlers bridging them work. `BorrowBookHandler` must check copy availability in `CatalogDbContext`, verify member existence in `IdentityDbContext`, and create a Loan in `LendingDbContext`. This is the system's highest-risk code — cross-context coordination across multiple databases — and it has not a single test. The failure mode is silent: the handler compiles, the domain tests pass, the deployment succeeds, but a concurrency bug in the availability check could allow double-booking at runtime with no observable signal until a member arrives to find their reserved book already on loan.
 
----
+**Why it matters:**
+A modular monolith splits domain logic from coordination logic on purpose. Domain tests cover one half of that contract. Leaving the coordination half untested means the system's core business rule — you cannot borrow a copy already on loan — is enforced only by code that has never run under test conditions. That is not a coverage metric. It is an undetected runtime risk in the most consequential path the system executes.
 
-## Architecture
-
-```
-Browser / Mobile Client
-        │ HTTPS (TLS 1.2+)
-        ▼
-┌─────────────────────────────────┐
-│  App Service  (ShelfLife.Api)   │  ← Managed Identity
-│  /api/v1/identity               │
-│  /api/v1/catalog                │
-│  /api/v1/lending                │
-│  /api/v1/insights               │
-└──────┬────────────────┬─────────┘
-       │ VNet (private) │ VNet (private)
-       │ [PE deployed + │ DNS zones live]
-       ▼                ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│  Azure SQL   │  │  Key Vault   │  │ Service Bus  │
-│  private EP  │  │  private EP  │  │  (events)    │
-└──────────────┘  └──────────────┘  └──────┬───────┘
-```
+**Design Change:**
+Add a TestContainers-based integration test project that boots a real SQL Server container, runs migrations on all five DbContexts, and exercises the full command handler pipeline. The first tests are the three invariant-breaking paths the domain is supposed to prevent: borrow when no copies are available, double-borrow the same physical copy, and place a duplicate hold from the same member. These are the cases where a silent handler bug would produce real-world damage — a library member receiving a book that another member is already holding.
 
 ---
 
-## Exercise Deliverables
+## ADR-001
 
-### 1. STRIDE-Lite Threat Model
+**Status:** Accepted
 
-Full document: [`docs/threat-model.md`](docs/threat-model.md)
+**Title:** Use Transactional Outbox to Decouple Domain Event Publishing from Service Bus
 
-| ID | Category | Threat | Risk Before | Fix Applied |
-|----|----------|--------|-------------|-------------|
-| S-01 | Spoofing | Credential stuffing on `/login` | Medium | Rate limiter 10 req/min per IP |
-| S-02 | Spoofing | Mass account creation on `/register` | Medium | Same rate limiter |
-| S-03 | Spoofing | JWT replay after Entra key rotation | Low | Entra JWKS auto-rotates; 8 h expiry |
-| T-01 | Tampering | SQL reachable from any Azure IP | **High** | `publicNetworkAccess: Disabled` + private endpoint |
-| T-03 | Tampering | Oversized JSON body → parser DoS | Low | 64 KB `MaxRequestBodySize` |
-| T-04 | Tampering | `pageSize=2147483647` unbounded SQL | Medium | `Math.Clamp(pageSize, 1, 100)` |
-| R-01 | Repudiation | No tamper-evident audit trail | Medium | Deferred — out of scope |
-| I-01 | Info Disclosure | SQL public endpoint reachable | **High** | Private endpoint |
-| I-02 | Info Disclosure | Key Vault public endpoint | Medium | Private endpoint + `networkAcls.defaultAction: Deny` |
-| I-04 | Info Disclosure | `Server: Kestrel` header reveals runtime | Low | `AddServerHeader = false` |
-| D-01 | Denial of Service | Unauthenticated request flood | **High** | Fixed-window rate limiter → HTTP 429 |
-| D-02 | Denial of Service | Unbounded paging query | Medium | Page clamped [1, 100] |
-| D-03 | Denial of Service | Multi-MB JSON body | Medium | 64 KB Kestrel limit |
-| E-03 | Elevation of Privilege | Malformed `sub` claim → unhandled 500 | Medium | `Guid.TryParse` → 401 |
+**Context:**
+When BorrowBook, ReturnBook, or PlaceHold completes, domain events (`LoanCreatedDomainEvent`, `LoanReturnedDomainEvent`, `HoldReadyEvent`) must reach the Service Bus so Notifications and Insights can react. Publishing directly inside a command handler creates a dual-write problem: the EF Core commit and the Service Bus publish are not atomic. A crash between them either loses the event or fires it against a transaction that never committed — producing phantom notifications or a silently missing insights update.
 
----
+**Options Considered:**
 
-### 2. Private-Endpoint Change (Deployed to Azure)
+*Option A — Direct publish inside command handler:*
+Publish to Service Bus before committing the EF Core transaction. Simple, immediate, no extra infrastructure. If the commit fails after a successful publish, the event is orphaned. At-most-once delivery; requires defensive rollback logic in every handler. Each handler acquires an I/O dependency beyond EF Core.
 
-**Azure CLI confirms both private endpoints provisioned:**
-```
-az network private-endpoint show -g rg-shelflife-dev -n shelflife-dev-sql-pe
-  → provisioningState: Succeeded
-az network private-endpoint show -g rg-shelflife-dev -n shelflife-dev-kv-pe
-  → provisioningState: Succeeded
-az webapp vnet-integration list → subnetResourceId: .../subnets/integration
-az sql server show → publicNetworkAccess: Disabled
-az keyvault show   → publicNetworkAccess: Disabled
-```
+*Option B — Transactional Outbox:*
+Write domain events to an `OutboxMessages` table in the same EF Core transaction as the business operation. `OutboxRelayWorker` polls every 5 seconds and forwards pending messages to Service Bus, marking them Dispatched. Atomicity is the database transaction. Reliability is the relay's retry loop. Consumers handle at-least-once delivery via idempotency guards.
 
-**DNS confirmed from within App Service VNet (via Kudu nslookup):**
-```
-shelflife-dev-sql.database.windows.net
-  → CNAME shelflife-dev-sql.privatelink.database.windows.net
-  → A     10.0.1.4   ← private endpoint IP, not public Azure IP
-```
+**Decision:** Option B — Transactional Outbox, implemented via `OutboxMessages` table and `OutboxRelayWorker` background service.
 
-**New file: `infra/modules/vnet.bicep`**
+**Rationale:**
+- The SQL transaction is the only atomicity boundary available without a distributed transaction coordinator. Writing `OutboxMessages` in the same transaction means a commit always produces an event and a rollback never does.
+- Failure handling is centralised in `OutboxRelayWorker` rather than duplicated across all eight handlers.
+- Notification handlers already implement idempotency — verified by two unit tests — making at-least-once delivery safe from day one.
+- 5-second polling latency is imperceptible for a library system where borrow confirmation emails have no sub-second SLA.
 
-```bicep
-resource vnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
-  properties: {
-    addressSpace: { addressPrefixes: ['10.0.0.0/16'] }
-    subnets: [
-      {
-        name: 'integration'          // App Service outbound (Swift VNet Integration)
-        properties: {
-          addressPrefix: '10.0.0.0/24'
-          delegations: [{ name: 'appservice-delegation'
-                          properties: { serviceName: 'Microsoft.Web/serverFarms' } }]
-        }
-      }
-      {
-        name: 'data'                 // Private endpoints for SQL + Key Vault
-        properties: {
-          addressPrefix: '10.0.1.0/24'
-          privateEndpointNetworkPolicies: 'Disabled'
-        }
-      }
-    ]
-  }
-}
-```
-
-**`infra/modules/sql.bicep`** — key additions over Day 26:
-
-```bicep
-// Line removed: AllowAzureServices firewall rule
-// publicNetworkAccess was absent (defaulted Enabled) — now explicitly Disabled
-resource sqlServer ... = {
-  properties: {
-    publicNetworkAccess: 'Disabled'
-    minimalTlsVersion: '1.2'
-  }
-}
-
-resource sqlPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-09-01' = {
-  properties: {
-    subnet: { id: dataSubnetId }
-    privateLinkServiceConnections: [{ properties: {
-      privateLinkServiceId: sqlServer.id
-      groupIds: ['sqlServer']
-    }}]
-  }
-}
-
-// Private DNS zone — *.database.windows.net resolves to private IP inside the VNet
-resource sqlDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink${environment().suffixes.sqlServerHostname}'
-}
-```
-
-**`infra/modules/keyvault.bicep`** — key additions:
-
-```bicep
-resource keyVault ... = {
-  properties: {
-    publicNetworkAccess: 'Disabled'
-    networkAcls: { defaultAction: 'Deny', bypass: 'AzureServices' }
-  }
-}
-// + private endpoint + private DNS zone (same pattern as SQL above)
-```
-
-**`infra/modules/api.bicep`** — App Service VNet integration:
-
-```bicep
-resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2023-12-01' = {
-  name: 'virtualNetwork'
-  properties: { subnetResourceId: integrationSubnetId, swiftSupported: true }
-}
-// siteConfig.vnetRouteAllEnabled: true routes all outbound through the VNet
-```
-
-**Effect on deploy:** `*.database.windows.net` and `*.vaultcore.azure.net` resolve to private IPs (`10.0.1.x`) only from within the VNet. External connections are dropped at the network layer — no firewall rule to misconfigure.
+**Consequences:**
+- Added complexity: `OutboxMessages` table, polling overhead on every module's DbContext, and a new background service.
+- `OutboxRelayWorker` is a new single point of failure with no dead-letter strategy, no exponential backoff, and no alerting when queue depth grows. This is the most urgent unresolved risk from this decision.
+- Latency is eventual, not immediate. A borrow confirmation email may arrive up to 5 seconds after the operation completes.
+- The relay worker has no integration tests. A dispatch bug is invisible until it surfaces as message loss in production.
 
 ---
 
-### 3. ZAP Baseline Summary
+## Day-by-Day Build Plan
 
-The ZAP scan ran against `http://localhost:8080` (Docker Compose stack). Full findings: [`docs/zap-baseline.md`](docs/zap-baseline.md).
+### Day 29 — Application Handler Coverage
 
-**Actual scan result:**
-```
-FAIL-NEW: 0   FAIL-INPROG: 0   WARN-NEW: 1   WARN-INPROG: 0   PASS: 66
-```
-The single WARN-NEW is "Storable and Cacheable Content" on 404 pages — harmless (no sensitive data returned on 404).
+- Add `ShelfLife.Lending.Application.Tests` with TestContainers (SQL Server image)
+- Test `BorrowBookHandler`: happy path, copy unavailable → 409, member not found → 404
+- Test `ReturnBookHandler`: happy path, already returned → 409
+- Test `PlaceHoldHandler`: happy path, duplicate hold from same member → 409
+- Establish shared TestContainers DbContext fixture all remaining modules can reuse
 
-**Command used:**
-```bash
-docker run --network host ghcr.io/zaproxy/zaproxy:stable \
-  zap-baseline.py -t http://localhost:8080 -r zap-report.html
-```
+### Day 30 — Outbox and Worker Confidence
 
-**Before/after counts:**
+- Add `OutboxRelayWorker` integration tests using Azurite for Service Bus emulation
+- Test: `OutboxMessages` written → relay dispatches → consumer handler invoked end-to-end
+- Add exponential backoff (max 5 retries, 2× delay) on publish failure in relay worker
+- Add `DeadLetterMessages` table for messages exceeding retry limit; alert on count > 0
+- Remove `Category!=Integration` filter from CI; add separate integration test job
 
-| Risk | Before | After Fix |
-|------|--------|-----------|
-| High | 0 | 0 |
-| Medium | 4 | 0 |
-| Low | 3 | 1 |
-| Informational | 2 | 1 |
+### Day 31 — Email Delivery and Auth Hardening
 
-**What was fixed:**
+- Implement `INotificationSender` using Azure Communication Services Email SDK
+- Store ACS connection string in Key Vault; validate delivery in staging before promoting to prod
+- Replace per-IP rate limit with per-member limit (partition key = JWT `sub` claim)
+- Set per-member ceiling: 5 borrow requests per hour
+- Add integration test for rate limit enforcement using authenticated test tokens
 
-| ZAP Finding | CWE | Fix (all in `Program.cs`) |
-|-------------|-----|---------------------------|
-| Missing Anti-Clickjacking Header | CWE-1021 | `X-Frame-Options: DENY` + `CSP: frame-ancestors 'none'` |
-| X-Content-Type-Options Missing | CWE-693 | `X-Content-Type-Options: nosniff` |
-| CSP Header Not Set | CWE-693 | `Content-Security-Policy: default-src 'none'` |
-| No Rate Limiting on Auth Endpoints | CWE-307 | Fixed-window 10 req/min → HTTP 429 |
-| Referrer-Policy Not Set | CWE-200 | `Referrer-Policy: strict-origin-when-cross-origin` |
-| Server Version Disclosure | CWE-200 | `AddServerHeader = false` in Kestrel options |
-| Permissions-Policy Not Set | — | `geolocation=(), camera=(), microphone=()` |
+### Day 32 — Observability and Final Hardening
 
-**Accepted residual risk (2 remaining):**
-- HSTS preloading — `app.UseHsts()` sets the header; preload list submission is an ops process outside this exercise
-- No WAF / DDoS Standard — requires Application Gateway Premium; out of budget scope
+- Add `dotnet list package --vulnerable` to CI; fail build on High/Critical CVEs
+- Add `dotnet format --verify-no-changes` to CI to prevent style drift
+- Add append-only `AuditLog` table for lending operations (member ID, timestamp, action)
+- Run k6 load test against `/api/v1/lending/loans` (50 VU, 2 min); confirm rate limit holds
+- Final ZAP baseline scan against staging; confirm FAIL-NEW: 0 before promoting to prod
 
 ---
 
-## Code Changes With Evidence
+## Final Reflection
 
-### Security Headers + Server Header
+Day 28 revealed that ShelfLife is architecturally sound at its edges but hollow in the middle. The domain layer has full test coverage. The infrastructure is security-hardened with live ZAP and rate-limit evidence. But the application layer — the eight handlers that coordinate across bounded contexts — has not a single test between them. This is not a gap that clever architecture fills. It is the part of the system that has to be correct at runtime, and right now it is invisible to every test suite.
 
-**`Program.cs`:**
-```csharp
-builder.WebHost.ConfigureKestrel(k => {
-    k.AddServerHeader = false;           // eliminates "Server: Kestrel" fingerprint
-    k.Limits.MaxRequestBodySize = 65_536;
-});
+The ADR for the Outbox pattern was the right decision. It gives the system honest atomicity guarantees without a distributed transaction coordinator, and its consequences — at-least-once delivery, idempotency requirement — were addressed before they became bugs. But it also introduced `OutboxRelayWorker` as a new single point of failure with no tests, no dead-letter handling, and no alerting. The pattern is correct; the implementation left a risk that the build plan must close.
 
-app.Use(async (ctx, next) => {
-    ctx.Response.Headers.Append("X-Content-Type-Options",  "nosniff");
-    ctx.Response.Headers.Append("X-Frame-Options",         "DENY");
-    ctx.Response.Headers.Append("Referrer-Policy",         "strict-origin-when-cross-origin");
-    ctx.Response.Headers.Append("Permissions-Policy",      "geolocation=(), camera=(), microphone=()");
-    var csp = ctx.Request.Path.StartsWithSegments("/swagger")
-        ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-        : "default-src 'none'; frame-ancestors 'none'";
-    ctx.Response.Headers.Append("Content-Security-Policy", csp);
-    await next();
-});
-```
-
-**Screenshot — all 5 headers confirmed present, `Server:` absent:**
-
-![Security Headers](screenshots/security-headers.png)
-
-PowerShell `Invoke-WebRequest` against `http://localhost:8080/swagger/index.html` returns:
-- `x-content-type-options: nosniff` ✅
-- `x-frame-options: DENY` ✅
-- `content-security-policy` ✅
-- `referrer-policy: strict-origin-when-cross-origin` ✅
-- `Server:` header — **absent** ✅
-
-**Also confirmed on the live Azure endpoint** (`GET https://shelflife-dev-api.azurewebsites.net/api/v1/nonexistent`) via .NET `HttpClient`:
-```
-HTTP 404
-X-Content-Type-Options     : nosniff
-X-Frame-Options            : DENY
-Referrer-Policy            : strict-origin-when-cross-origin
-Content-Security-Policy    : default-src 'none'; frame-ancestors 'none'
-```
-Security headers middleware is active in production at deployment version `6e92d6b7` (DOTNETCORE-10.0.7).
-
----
-
-### Swagger UI — JWT Bearer Auth + `/api/v1/` Versioning
-
-![Swagger UI with Bearer Auth](screenshots/swagger.png)
-
-Browser at `localhost:8080/swagger/index.html` shows:
-- Title: **ShelfLife API v1** — version segment from `SwaggerDoc("v1", ...)`
-- All endpoints listed under `/api/v1/` prefix
-- Padlock icons on every operation — from `AddSecurityRequirement` applied globally
-- "Available authorizations" dialog: `Bearer (http, Bearer)` — **Authorized** with a token obtained from `POST /api/v1/identity/login`
-
----
-
-### Register + Login — `/api/v1/` Versioned Routes
-
-![Login Flow](screenshots/login.png)
-
-**What the screenshot shows:**
-- `POST /api/v1/identity/register` with `{"email":..., "password":..., "fullName":...}` → **201 Created** with the new member ID
-- `POST /api/v1/identity/login` with valid credentials → **200 OK** and a JWT token in the response body
-
-Both requests use the `/api/v1/` prefix — confirming URL versioning is active.
-
----
-
-### Versioning — Protected Routes Enforce Auth
-
-![API Versioning](screenshots/Versioning.png)
-
-**What the screenshot shows:**
-- Calling `/api/v1/identity/login` with wrong credentials → **401 Unauthorized** (auth middleware ran and evaluated the credentials)
-- Calling a protected route without a token → **401** from `RequireAuthorization()`
-
-This confirms:
-1. Routes are correctly registered under `/api/v1/`
-2. The auth middleware is active on the non-identity groups
-
----
-
-### Rate Limiting — HTTP 429 After Limit Exceeded
-
-**`Program.cs`:**
-```csharp
-options.AddFixedWindowLimiter("identity", cfg => {
-    cfg.Window      = TimeSpan.FromMinutes(1);
-    cfg.PermitLimit = 10;
-    cfg.QueueLimit  = 0;   // reject immediately — no queuing
-});
-options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-```
-
-![Rate Limiting](screenshots/Rate-limiting.png)
-
-**What the screenshot shows:**
-- 12 rapid `POST /api/v1/identity/login` requests in one minute
-- Requests 1–8: **401** — wrong credentials, auth evaluated and rejected normally
-- Requests 9–12: **429 Too Many Requests** — fixed-window limiter kicked in
-
-> **Note:** Limit hit at request 9 (not 10) because earlier register and login calls in the same minute consumed part of the per-IP quota.
-
----
-
-### Body Limit — HTTP 413 on Oversized Payload
-
-**`Program.cs`:**
-```csharp
-kestrel.Limits.MaxRequestBodySize = 65_536; // 64 KB
-```
-
-![Body Limit](screenshots/Body-limit.png)
-
-**What the screenshot shows:**
-- A 70,067-byte JSON body sent to `POST /api/v1/lending/loans` (auth'd endpoint, with valid JWT)
-- Response: **413 Request Entity Too Large**
-- Kestrel rejects the body at the transport layer — the endpoint handler never runs
-
----
-
-### Seq Dashboard — All Security Responses Logged
-
-![Seq Dashboard](screenshots/Seq-dashboard.png)
-
-**What the screenshot shows:**
-- `413` responses with log message: `"the application completed without reading the entire request body"` — Kestrel body limit in action
-- `429` responses on identity endpoint — rate limiter rejecting excess requests
-- `401` responses — auth evaluated correctly on each request
-- All entries include the full request path, response time, and status — Serilog request logging middleware is active
-
----
-
-## `Span<T>` — ISBN Validation
-
-**`ValueObjects.cs`** before (two heap allocations per call):
-```csharp
-var digits = raw.Replace("-", "").Replace(" ", "");  // 2 new strings
-if (digits.Length is not 10 and not 13)
-    throw new ArgumentException(...);
-```
-
-**After (zero heap allocations in the hot path):**
-```csharp
-public static Isbn Create(string raw)
-{
-    Span<char> buf = stackalloc char[13];             // stack buffer — no GC pressure
-    var normalised = Normalise(raw.AsSpan(), buf);    // strips hyphens/spaces in-place
-
-    if (normalised.Length == 10 && !IsValidIsbn10(normalised))
-        throw new ArgumentException($"Invalid ISBN-10 check digit: {raw}");
-    if (normalised.Length == 13 && !IsValidIsbn13(normalised))
-        throw new ArgumentException($"Invalid ISBN-13 check digit: {raw}");
-
-    return new Isbn(new string(normalised));  // single allocation — the stored value
-}
-
-// ISBN-13: alternating weight 1/3, total mod 10 == 0
-private static bool IsValidIsbn13(ReadOnlySpan<char> digits)
-{
-    var sum = 0;
-    for (var i = 0; i < 12; i++)
-        sum += (digits[i] - '0') * (i % 2 == 0 ? 1 : 3);
-    return (10 - sum % 10) % 10 == digits[12] - '0';
-}
-```
-
-**Test output — 26/26 pass (including 4 new ISBN checksum cases):**
-
-```
-Passed!  - Failed: 0, Passed: 12, Total: 12 — ShelfLife.Catalog.Domain.Tests
-Passed!  - Failed: 0, Passed:  8, Total:  8 — ShelfLife.Lending.Domain.Tests
-Passed!  - Failed: 0, Passed:  2, Total:  2 — ShelfLife.Notifications.Application.Tests
-Passed!  - Failed: 0, Passed:  4, Total:  4 — ShelfLife.Architecture.Tests
-```
-
-New test cases added:
-```csharp
-[Fact] void Isbn10_ValidCheckDigit_Accepted()    // "0-19-852663-6" → "0198526636"
-[Fact] void Isbn10_InvalidCheckDigit_Throws()    // last digit changed 6→7
-[Fact] void Isbn13_InvalidCheckDigit_Throws()    // last digit changed 4→5
-[Fact] void Isbn_Empty_Throws()                  // whitespace-only input
-```
-
----
-
-## Bug Found During Practical Run
-
-While running the Docker Compose stack end-to-end, a dev-mode auth bug was found and fixed:
-
-**Problem 1 — Dev auth scheme:**
-`AddMicrosoftIdentityWebApiAuthentication` expects Entra ID tokens (RSA-signed, correct issuer). The local `JwtService` issues HS256 tokens with `iss: "shelflife-api"`. The two don't match — every protected endpoint returned **401** even with a valid token.
-
-**Fix:**
-```csharp
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(opts => {
-            opts.MapInboundClaims = false;  // keep "sub" as "sub", not remapped
-            opts.TokenValidationParameters = new TokenValidationParameters {
-                ValidIssuer      = builder.Configuration["Jwt:Issuer"],
-                ValidAudience    = builder.Configuration["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
-            };
-        });
-}
-else
-{
-    builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
-}
-```
-
-**Problem 2 — Claim mapping:**
-The default JWT bearer middleware remaps `sub` → `ClaimTypes.NameIdentifier`. `LendingEndpoints.cs` calls `user.FindFirstValue("sub")`, which returned `null` after remapping → `Guid.TryParse(null)` → `Results.Unauthorized()`. Fixed by `MapInboundClaims = false` above.
-
-**Verified:** After the fix, `POST /api/v1/lending/loans` with a valid JWT passes auth and reaches the domain layer (returned **500** from a pre-existing EF Core navigation mapping bug unrelated to this security work, not **401**).
-
----
-
-## System Design Tradeoffs
-
-| Decision | Chosen | Alternative | Why |
-|---|---|---|---|
-| Private endpoints vs VNet Service Endpoints | Private endpoints | Service endpoints | PE gives a dedicated private NIC in your VNet; SE just restricts the service-side firewall. PE is zero-trust by default — no IP list to maintain. |
-| Fixed-window vs sliding-window rate limiter | Fixed-window | Token bucket / sliding | Simpler burst behaviour; correct for auth endpoints where the goal is blocking automated tooling, not optimising fairness. |
-| URL-segment versioning (`/api/v1/`) | URL segment | Header versioning | Most visible — version is in logs, curl output, browser history. Breaking changes ship under `/api/v2/` without touching v1 clients. |
-| `Span<T>` + `stackalloc` in ISBN parser | `stackalloc char[13]` | `string.Replace` | Zero heap allocation on the normalisation path. ISBN is validated on every book-add command; removes GC pressure entirely for that step. |
-| Swagger only in Development | `if (IsDevelopment())` | Always-on | Production Swagger exposes full API shape — reconnaissance aid. 404 in prod is correct for a pure JSON API. |
-
----
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `docs/threat-model.md` | New — STRIDE-lite catalogue |
-| `docs/zap-baseline.md` | New — ZAP findings and fixes |
-| `infra/modules/vnet.bicep` | New — VNet with two subnets |
-| `infra/modules/sql.bicep` | Private endpoint + `publicNetworkAccess: Disabled` |
-| `infra/modules/keyvault.bicep` | Private endpoint + network ACL deny |
-| `infra/modules/api.bicep` | VNet integration (`networkConfig/virtualNetwork`) |
-| `infra/main.bicep` | `vnetModule` added; subnet IDs wired to all modules |
-| `src/Host/ShelfLife.Api/Program.cs` | Rate limiting, security headers, body limit, versioning, Swagger JWT, dev auth scheme fix |
-| `src/Host/ShelfLife.Api/Endpoints/InsightsEndpoints.cs` | `Math.Clamp(pageSize, 1, 100)` |
-| `src/Host/ShelfLife.Api/Endpoints/LendingEndpoints.cs` | `Guid.TryParse` guard on `sub` claim |
-| `src/Modules/Catalog/ShelfLife.Catalog.Domain/ValueObjects.cs` | `Span<T>` + ISBN-10/13 checksum validation |
-| `tests/unit/ShelfLife.Catalog.Domain.Tests/BookTitleTests.cs` | 4 new ISBN checksum test cases |
+Days 29–32 are ordered by risk, not effort. Handler coverage first, because a concurrency bug in `BorrowBookHandler` is the most dangerous undetected failure in the system. Outbox confidence second, because a silently-failing relay corrupts the notification and insights streams without any observable signal. Real email third, because a notification subsystem that cannot send is a feature in name only. Hardening last, because dependency scanning and audit logs matter for compliance but not for correctness. By Day 32, every path the system executes should be backed by a test that would catch the most obvious way it could go wrong.

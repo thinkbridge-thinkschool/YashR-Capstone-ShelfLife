@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Infrastructure.Persistence;
 
 namespace ShelfLife.Notifications.Infrastructure;
@@ -13,6 +14,8 @@ public sealed class NotificationsDbContext : ShelfLifeDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<OutboxMessage>().ToTable("OutboxMessages", t => t.ExcludeFromMigrations());
 
         modelBuilder.Entity<DeliveryLog>(b =>
         {

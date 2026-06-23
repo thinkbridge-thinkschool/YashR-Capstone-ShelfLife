@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Infrastructure.Persistence;
 
 namespace ShelfLife.Insights.Infrastructure;
@@ -14,6 +15,8 @@ public sealed class InsightsDbContext : ShelfLifeDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<OutboxMessage>().ToTable("OutboxMessages", t => t.ExcludeFromMigrations());
 
         modelBuilder.Entity<PopularTitleProjection>(b =>
         {

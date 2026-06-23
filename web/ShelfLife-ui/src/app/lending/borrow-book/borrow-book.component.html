@@ -1,0 +1,86 @@
+<div class="page-header">
+  <h2>Borrow Book</h2>
+  <p>Issue a 21-day loan for an available book title.</p>
+</div>
+
+<mat-card class="form-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon style="vertical-align:middle;margin-right:8px">book</mat-icon>
+      New Loan
+    </mat-card-title>
+    <mat-card-subtitle>Lending Module &mdash; POST /api/v1/lending/loans</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="outline" class="full-width" style="margin-top:12px">
+        <mat-label>Book Title ID</mat-label>
+        <mat-icon matPrefix>bookmark</mat-icon>
+        <input matInput formControlName="bookTitleId"
+               placeholder="UUID of the book title to borrow">
+        <mat-hint>Paste the Book Title ID from the Catalog step</mat-hint>
+        @if (form.controls.bookTitleId.hasError('required') && form.controls.bookTitleId.touched) {
+          <mat-error>Book Title ID is required</mat-error>
+        }
+      </mat-form-field>
+
+      @if (error()) {
+        <div class="error-banner" style="margin-top:12px">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div style="margin-top:16px">
+        <button mat-raised-button color="primary" type="submit" [disabled]="loading()">
+          @if (loading()) {
+            <div class="btn-spinner-wrap">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Processing…</span>
+            </div>
+          } @else {
+            <mat-icon>book</mat-icon> Borrow
+          }
+        </button>
+      </div>
+
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (result()) {
+  <div class="result-panel" style="max-width:560px;margin-top:20px">
+    <div class="result-title">
+      <mat-icon style="font-size:16px;vertical-align:middle;margin-right:4px">check_circle</mat-icon>
+      Loan created successfully
+    </div>
+
+    <div class="result-row">
+      <span class="result-label">Loan ID</span>
+      <span class="result-value">{{ result()!.loanId }}</span>
+      <button mat-icon-button
+              [matTooltip]="copied() ? 'Copied!' : 'Copy Loan ID'"
+              (click)="copyLoanId(result()!.loanId)"
+              style="width:32px;height:32px;line-height:32px">
+        <mat-icon style="font-size:18px">{{ copied() ? 'done' : 'content_copy' }}</mat-icon>
+      </button>
+    </div>
+
+    <div class="result-row">
+      <span class="result-label">Due Date</span>
+      <span class="result-value">{{ result()!.dueDate | date:'mediumDate' }}</span>
+    </div>
+
+    <div class="result-row">
+      <span class="result-label">Status</span>
+      <span class="result-value" style="color:#2e7d32;font-weight:500">Active</span>
+    </div>
+
+    <div class="info-banner" style="margin-top:8px">
+      <mat-icon>info</mat-icon>
+      <span>Copy this Loan ID — you will need it to return the book.</span>
+    </div>
+  </div>
+}

@@ -4,8 +4,6 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,6 +12,8 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using ShelfLife.Catalog.Infrastructure;
+using ShelfLife.Identity.Application;
+using ShelfLife.Identity.Domain;
 using ShelfLife.Identity.Infrastructure;
 using ShelfLife.Infrastructure.Messaging;
 using ShelfLife.Insights.Infrastructure;
@@ -61,12 +61,14 @@ if (builder.Environment.IsDevelopment())
 //   Azure AD tenant. JwtService issues tokens with ClaimTypes.Role.
 if (builder.Environment.IsDevelopment())
 {
-    var jwtIssuer   = builder.Configuration["Jwt:Issuer"]   ?? "";
-    var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "";
-    var jwtSecret   = builder.Configuration["Jwt:Secret"]   ?? "";
-
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(opts =>
+        .AddJwtBearer();
+
+    // Read JWT config lazily via IConfiguration so WebApplicationFactory
+    // in-memory overrides are present before the options are resolved.
+    builder.Services
+        .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+        .Configure<IConfiguration>((opts, config) =>
         {
             // Keep claim names as-is (sub, email, etc.) so LendingEndpoints can
             // call user.FindFirstValue("sub") without hitting the default mapping
@@ -75,12 +77,12 @@ if (builder.Environment.IsDevelopment())
             opts.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer   = true,
-                ValidIssuer      = jwtIssuer,
+                ValidIssuer      = config["Jwt:Issuer"],
                 ValidateAudience = true,
-                ValidAudience    = jwtAudience,
+                ValidAudience    = config["Jwt:Audience"],
                 ValidateLifetime = true,
                 IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtSecret)),
+                    Encoding.UTF8.GetBytes(config["Jwt:Secret"] ?? "")),
             };
         });
 }
@@ -93,7 +95,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Librarian", policy =>
         policy.RequireAuthenticatedUser()
-              .RequireRole("Librarian"));
+              .RequireClaim("role", "Librarian"));
 });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
@@ -106,7 +108,7 @@ builder.Services.AddRateLimiter(options =>
     options.AddFixedWindowLimiter("identity", cfg =>
     {
         cfg.Window              = TimeSpan.FromMinutes(1);
-        cfg.PermitLimit         = 10;
+        cfg.PermitLimit         = builder.Configuration.GetValue("RateLimiter:Identity:PermitLimit", 10);
         cfg.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         cfg.QueueLimit          = 0;  // reject immediately — no queue
     });
@@ -114,7 +116,7 @@ builder.Services.AddRateLimiter(options =>
     options.AddFixedWindowLimiter("api", cfg =>
     {
         cfg.Window              = TimeSpan.FromMinutes(1);
-        cfg.PermitLimit         = 60;
+        cfg.PermitLimit         = builder.Configuration.GetValue("RateLimiter:Api:PermitLimit", 60);
         cfg.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         cfg.QueueLimit          = 0;
     });
@@ -122,6 +124,15 @@ builder.Services.AddRateLimiter(options =>
     // Return 429 with Retry-After header instead of the default 503
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
+// Allows the Angular dev server (port 4200) to reach the API during development.
+// The policy is applied only when IsDevelopment() is true (see pipeline below).
+builder.Services.AddCors(options =>
+    options.AddPolicy("DevAngular", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()));
 
 // ── Service Bus ───────────────────────────────────────────────────────────────
 builder.Services.AddSingleton(sp => new ServiceBusClient(
@@ -135,6 +146,9 @@ builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddLendingModule(builder.Configuration);
 builder.Services.AddInsightsModule(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
+
+// ── Health Checks ─────────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks();
 
 // ── Unit of Work ──────────────────────────────────────────────────────────────
 builder.Services.AddScoped<ShelfLife.SharedKernel.IUnitOfWork>(sp =>
@@ -221,18 +235,19 @@ else
     app.UseHttpsRedirection();
 }
 
-// ── DB: create schema on first run ────────────────────────────────────────────
-// EnsureCreatedAsync + per-statement DDL is idempotent; objects that already
-// exist are silently skipped, so subsequent restarts are safe.
+// ── DB: apply EF Core migrations ─────────────────────────────────────────────
+// MigrateAsync is idempotent — it consults __EFMigrationsHistory and only
+// applies pending migrations, so subsequent restarts are safe.
+// IdentityDbContext runs first because it owns the shared OutboxMessages table.
 {
     await using var scope = app.Services.CreateAsyncScope();
-    var sp    = scope.ServiceProvider;
-    var log   = sp.GetRequiredService<ILogger<Program>>();
-    var ctxs  = new DbContext[]
+    var sp   = scope.ServiceProvider;
+    var log  = sp.GetRequiredService<ILogger<Program>>();
+    var ctxs = new DbContext[]
     {
-        sp.GetRequiredService<LendingDbContext>(),
-        sp.GetRequiredService<CatalogDbContext>(),
         sp.GetRequiredService<IdentityDbContext>(),
+        sp.GetRequiredService<CatalogDbContext>(),
+        sp.GetRequiredService<LendingDbContext>(),
         sp.GetRequiredService<InsightsDbContext>(),
         sp.GetRequiredService<NotificationsDbContext>(),
     };
@@ -242,29 +257,16 @@ else
         try
         {
             foreach (var ctx in ctxs)
-            {
-                await ctx.Database.EnsureCreatedAsync();
-                var creator = ctx.Database.GetService<IRelationalDatabaseCreator>();
-                var script  = creator.GenerateCreateScript();
-                var batches = script.Split("\nGO", StringSplitOptions.RemoveEmptyEntries);
-                foreach (var batch in batches)
-                {
-                    var sql = batch.Trim();
-                    if (!string.IsNullOrEmpty(sql))
-                    {
-                        try { await ctx.Database.ExecuteSqlRawAsync(sql); }
-                        catch { /* object already exists — safe to skip */ }
-                    }
-                }
-            }
+                await ctx.Database.MigrateAsync();
+            log.LogInformation("EF Core migrations applied successfully");
             break;
         }
         catch (Exception ex) when (ex.Message.Contains("15247") || ex.Message.Contains("does not have permission"))
         {
-            // Managed identity lacks CREATE SCHEMA permission (SQL 15247).
+            // Managed identity lacks ALTER permission (SQL error 15247).
             // A DBA must run: ALTER ROLE db_ddladmin ADD MEMBER [shelflife-dev-api]
-            log.LogError("DB schema skipped — managed identity lacks CREATE SCHEMA. " +
-                "Grant db_ddladmin to [shelflife-dev-api] in ShelfLife DB. Error: {Msg}", ex.Message);
+            log.LogError("DB migration skipped — managed identity lacks ALTER permission. " +
+                "Grant db_ddladmin to the managed identity. Error: {Msg}", ex.Message);
             break;
         }
         catch (Exception ex) when (attempt < 10)
@@ -275,13 +277,23 @@ else
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "DB schema creation failed after 10 attempts — app starts degraded");
+            log.LogError(ex, "DB migration failed after 10 attempts — app starts degraded");
             break;
         }
     }
 }
 
+// ── Dev seed ──────────────────────────────────────────────────────────────────
+// Creates a Librarian account for local demo if one does not already exist.
+// Guarded by IsDevelopment() — never runs in staging or production.
+if (app.Environment.IsDevelopment())
+    await SeedLibrarianAsync(app.Services);
+
 app.UseSerilogRequestLogging();
+
+if (app.Environment.IsDevelopment())
+    app.UseCors("DevAngular");
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -308,7 +320,27 @@ app.MapGroup("/api/v1/insights")
    .RequireAuthorization("Librarian")
    .RequireRateLimiting("api");
 
+app.MapHealthChecks("/health");
+
 app.Run();
+
+static async Task SeedLibrarianAsync(IServiceProvider services)
+{
+    await using var scope = services.CreateAsyncScope();
+    var sp      = scope.ServiceProvider;
+    var members = sp.GetRequiredService<IMemberRepository>();
+    var hasher  = sp.GetRequiredService<IPasswordHasher>();
+    var uow     = sp.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
+
+    const string email = "librarian@shelflife.dev";
+    if (await members.FindByEmailAsync(email) is not null) return;
+
+    var hash      = hasher.Hash("Librarian@123");
+    var librarian = Member.Register(Guid.NewGuid(), email, "ShelfLife Librarian", hash);
+    librarian.AssignRole(MemberRole.Librarian);
+    await members.AddAsync(librarian);
+    await uow.SaveChangesAsync();
+}
 
 // Needed for WebApplicationFactory in integration tests
 public partial class Program { }

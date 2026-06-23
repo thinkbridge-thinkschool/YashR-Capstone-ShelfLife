@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test host and HTTP client -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.5" />
+
+    <!-- SQL Server Testcontainer -->
+    <PackageReference Include="Testcontainers.MsSql" Version="3.10.0" />
+
+    <!-- xUnit + runner -->
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+
+    <!-- Assertions -->
+    <PackageReference Include="FluentAssertions" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference the API host so WebApplicationFactory<Program> compiles -->
+    <ProjectReference Include="..\..\..\src\Host\ShelfLife.Api\ShelfLife.Api.csproj" />
+  </ItemGroup>
+
+</Project>

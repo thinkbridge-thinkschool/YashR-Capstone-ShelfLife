@@ -1,0 +1,99 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <!-- ── Left sidebar ───────────────────────────────────────────────────── -->
+  <mat-sidenav mode="side" opened class="sidenav">
+
+    <!-- Brand -->
+    <div class="sidenav-brand">
+      <mat-icon class="brand-icon">local_library</mat-icon>
+      <span class="brand-name">ShelfLife</span>
+    </div>
+
+    <mat-nav-list>
+
+      <!-- Dashboard -->
+      <mat-list-item
+        routerLink="/dashboard"
+        routerLinkActive="active-nav"
+        [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon matListItemIcon>dashboard</mat-icon>
+        <span matListItemTitle>Dashboard</span>
+      </mat-list-item>
+
+      <!-- ── Catalog bounded context ─────────────────────────────────── -->
+      <div class="nav-section-label">Catalog</div>
+
+      <mat-list-item routerLink="/catalog/add-book" routerLinkActive="active-nav">
+        <mat-icon matListItemIcon>library_add</mat-icon>
+        <span matListItemTitle>Add Book</span>
+      </mat-list-item>
+
+      <mat-list-item routerLink="/catalog/add-copy" routerLinkActive="active-nav">
+        <mat-icon matListItemIcon>add_box</mat-icon>
+        <span matListItemTitle>Add Copy</span>
+      </mat-list-item>
+
+      <!-- ── Lending bounded context ─────────────────────────────────── -->
+      <div class="nav-section-label">Lending</div>
+
+      <mat-list-item routerLink="/lending/borrow" routerLinkActive="active-nav">
+        <mat-icon matListItemIcon>book</mat-icon>
+        <span matListItemTitle>Borrow Book</span>
+      </mat-list-item>
+
+      <mat-list-item routerLink="/lending/return" routerLinkActive="active-nav">
+        <mat-icon matListItemIcon>assignment_return</mat-icon>
+        <span matListItemTitle>Return Book</span>
+      </mat-list-item>
+
+      <!-- ── Insights bounded context ───────────────────────────────── -->
+      <div class="nav-section-label">Insights</div>
+
+      <mat-list-item routerLink="/insights/popular" routerLinkActive="active-nav">
+        <mat-icon matListItemIcon>trending_up</mat-icon>
+        <span matListItemTitle>Popular Books</span>
+      </mat-list-item>
+
+      <mat-list-item routerLink="/insights/overdue" routerLinkActive="active-nav">
+        <mat-icon matListItemIcon>warning_amber</mat-icon>
+        <span matListItemTitle>Overdue Loans</span>
+      </mat-list-item>
+
+      <!-- Spacer pushes Logout to bottom -->
+      <div class="sidenav-spacer"></div>
+
+      <!-- Logout -->
+      <div class="sidenav-logout">
+        <mat-list-item (click)="logout()" style="cursor:pointer">
+          <mat-icon matListItemIcon>logout</mat-icon>
+          <span matListItemTitle>Logout</span>
+        </mat-list-item>
+      </div>
+
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <!-- ── Main content ──────────────────────────────────────────────────── -->
+  <mat-sidenav-content>
+
+    <!-- Top toolbar -->
+    <mat-toolbar color="primary" class="top-toolbar">
+      <span>ShelfLife</span>
+      <span class="toolbar-spacer"></span>
+
+      @if (auth.currentUser(); as user) {
+        <span class="user-email">{{ user.email }}</span>
+        <span class="role-chip" [class.librarian-chip]="auth.isLibrarian()">
+          {{ user.role }}
+        </span>
+      }
+    </mat-toolbar>
+
+    <!-- Routed page content -->
+    <div class="content-area">
+      <router-outlet />
+    </div>
+
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

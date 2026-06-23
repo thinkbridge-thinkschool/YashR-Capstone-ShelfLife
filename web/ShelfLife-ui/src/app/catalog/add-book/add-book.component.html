@@ -1,0 +1,83 @@
+<div class="page-header">
+  <h2>Add Book</h2>
+  <p>Register a new title in the catalog by ISBN. The Open Library API enriches the metadata.</p>
+</div>
+
+@if (!auth.isLibrarian()) {
+  <div class="role-warning">
+    <mat-icon>lock</mat-icon>
+    <span>This action requires the <strong>Librarian</strong> role. You are currently logged in as <strong>{{ auth.currentUser()?.role }}</strong>.</span>
+  </div>
+}
+
+<mat-card class="form-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon style="vertical-align:middle;margin-right:8px">library_add</mat-icon>
+      New Book Title
+    </mat-card-title>
+    <mat-card-subtitle>Catalog Module &mdash; POST /api/v1/catalog/books</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <mat-form-field appearance="outline" class="full-width" style="margin-top:12px">
+        <mat-label>ISBN</mat-label>
+        <mat-icon matPrefix>tag</mat-icon>
+        <input matInput formControlName="isbn" placeholder="e.g. 9780007488681">
+        <mat-hint>ISBN-10 or ISBN-13, hyphens allowed</mat-hint>
+        @if (form.controls.isbn.hasError('required') && form.controls.isbn.touched) {
+          <mat-error>ISBN is required</mat-error>
+        }
+      </mat-form-field>
+
+      @if (error()) {
+        <div class="error-banner" style="margin-top:12px">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div style="margin-top:16px">
+        <button mat-raised-button color="primary" type="submit"
+                [disabled]="loading() || !auth.isLibrarian()">
+          @if (loading()) {
+            <div class="btn-spinner-wrap">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Adding…</span>
+            </div>
+          } @else {
+            <mat-icon>add</mat-icon> Add Book
+          }
+        </button>
+      </div>
+
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (result()) {
+  <div class="result-panel" style="max-width:560px;margin-top:20px">
+    <div class="result-title">
+      <mat-icon style="font-size:16px;vertical-align:middle;margin-right:4px">check_circle</mat-icon>
+      Book added successfully
+    </div>
+
+    <div class="result-row">
+      <span class="result-label">Book Title ID</span>
+      <span class="result-value">{{ result()!.bookTitleId }}</span>
+      <button mat-icon-button
+              [matTooltip]="copied() ? 'Copied!' : 'Copy ID'"
+              (click)="copyId(result()!.bookTitleId)"
+              style="width:32px;height:32px;line-height:32px">
+        <mat-icon style="font-size:18px">{{ copied() ? 'done' : 'content_copy' }}</mat-icon>
+      </button>
+    </div>
+
+    <div class="info-banner" style="margin-top:8px">
+      <mat-icon>info</mat-icon>
+      <span>Copy this Book Title ID — you will need it to add copies and borrow this book.</span>
+    </div>
+  </div>
+}

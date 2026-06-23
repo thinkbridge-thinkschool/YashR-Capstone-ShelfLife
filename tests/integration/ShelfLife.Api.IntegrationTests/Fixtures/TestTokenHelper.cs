@@ -21,11 +21,11 @@ public static class TestTokenHelper
         var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        // Use the same claim names as JwtService: sub + ClaimTypes.Role
+        // Use the same claim names as JwtService: sub + role (raw short name)
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, memberId.ToString()),
-            new Claim(ClaimTypes.Role, role),
+            new Claim("role", role),
         };
 
         var token = new JwtSecurityToken(

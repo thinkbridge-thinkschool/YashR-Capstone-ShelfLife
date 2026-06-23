@@ -12,6 +12,8 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using ShelfLife.Catalog.Infrastructure;
+using ShelfLife.Identity.Application;
+using ShelfLife.Identity.Domain;
 using ShelfLife.Identity.Infrastructure;
 using ShelfLife.Infrastructure.Messaging;
 using ShelfLife.Insights.Infrastructure;
@@ -93,7 +95,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Librarian", policy =>
         policy.RequireAuthenticatedUser()
-              .RequireRole("Librarian"));
+              .RequireClaim("role", "Librarian"));
 });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
@@ -122,6 +124,15 @@ builder.Services.AddRateLimiter(options =>
     // Return 429 with Retry-After header instead of the default 503
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
+// Allows the Angular dev server (port 4200) to reach the API during development.
+// The policy is applied only when IsDevelopment() is true (see pipeline below).
+builder.Services.AddCors(options =>
+    options.AddPolicy("DevAngular", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()));
 
 // ── Service Bus ───────────────────────────────────────────────────────────────
 builder.Services.AddSingleton(sp => new ServiceBusClient(
@@ -272,7 +283,17 @@ else
     }
 }
 
+// ── Dev seed ──────────────────────────────────────────────────────────────────
+// Creates a Librarian account for local demo if one does not already exist.
+// Guarded by IsDevelopment() — never runs in staging or production.
+if (app.Environment.IsDevelopment())
+    await SeedLibrarianAsync(app.Services);
+
 app.UseSerilogRequestLogging();
+
+if (app.Environment.IsDevelopment())
+    app.UseCors("DevAngular");
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -302,6 +323,24 @@ app.MapGroup("/api/v1/insights")
 app.MapHealthChecks("/health");
 
 app.Run();
+
+static async Task SeedLibrarianAsync(IServiceProvider services)
+{
+    await using var scope = services.CreateAsyncScope();
+    var sp      = scope.ServiceProvider;
+    var members = sp.GetRequiredService<IMemberRepository>();
+    var hasher  = sp.GetRequiredService<IPasswordHasher>();
+    var uow     = sp.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
+
+    const string email = "librarian@shelflife.dev";
+    if (await members.FindByEmailAsync(email) is not null) return;
+
+    var hash      = hasher.Hash("Librarian@123");
+    var librarian = Member.Register(Guid.NewGuid(), email, "ShelfLife Librarian", hash);
+    librarian.AssignRole(MemberRole.Librarian);
+    await members.AddAsync(librarian);
+    await uow.SaveChangesAsync();
+}
 
 // Needed for WebApplicationFactory in integration tests
 public partial class Program { }

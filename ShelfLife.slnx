@@ -47,6 +47,9 @@
     <Project Path="tests/unit/ShelfLife.Lending.Domain.Tests/ShelfLife.Lending.Domain.Tests.csproj" />
     <Project Path="tests/unit/ShelfLife.Notifications.Application.Tests/ShelfLife.Notifications.Application.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/ShelfLife.Api.IntegrationTests/ShelfLife.Api.IntegrationTests.csproj" />
+  </Folder>
   <Folder Name="/Workers/">
     <Project Path="Workers/ShelfLife.OverdueWorker/ShelfLife.OverdueWorker.csproj" />
   </Folder>

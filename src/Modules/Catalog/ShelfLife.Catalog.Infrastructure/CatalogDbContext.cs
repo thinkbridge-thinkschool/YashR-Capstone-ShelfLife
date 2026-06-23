@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ShelfLife.Catalog.Domain;
+using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Infrastructure.Persistence;
 
 namespace ShelfLife.Catalog.Infrastructure;
@@ -14,6 +15,10 @@ public sealed class CatalogDbContext : ShelfLifeDbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // OutboxMessages table is owned by IdentityDbContext's migration.
+        // Keep the EF tracking (reads/writes work) but exclude from this migration.
+        modelBuilder.Entity<OutboxMessage>().ToTable("OutboxMessages", t => t.ExcludeFromMigrations());
+
         modelBuilder.Entity<BookTitle>(b =>
         {
             b.ToTable("BookTitles", "catalog");
@@ -25,7 +30,7 @@ public sealed class CatalogDbContext : ShelfLifeDbContext
             b.OwnsOne(x => x.Isbn, isbn =>
             {
                 isbn.Property(i => i.Value).HasColumnName("Isbn").HasMaxLength(13).IsRequired();
-                isbn.HasIndex(i => i.Value).IsUnique();
+                isbn.HasIndex(i => i.Value).HasDatabaseName("IX_BookTitles_Isbn").IsUnique();
             });
 
             b.OwnsMany(x => x.Copies, copy =>
@@ -34,11 +39,16 @@ public sealed class CatalogDbContext : ShelfLifeDbContext
                 copy.HasKey(c => c.Id);
                 copy.Property(c => c.Status).HasConversion<string>().HasMaxLength(50);
                 copy.Property(c => c.Condition).HasConversion<string>().HasMaxLength(50);
-                copy.OwnsOne(c => c.Barcode, bc =>
-                {
-                    bc.Property(b => b.Value).HasColumnName("Barcode").HasMaxLength(100).IsRequired();
-                    bc.HasIndex(b => b.Value).IsUnique();
-                });
+
+                // CopyBarcode as a scalar via HasConversion avoids the nested OwnsOne table-split
+                // pattern, which causes EF to issue a secondary UPDATE for the same Copies row
+                // after the INSERT, yielding DbUpdateConcurrencyException (0 rows affected).
+                copy.Property(c => c.Barcode)
+                    .HasConversion(bc => bc.Value, v => CopyBarcode.Create(v))
+                    .HasColumnName("Barcode")
+                    .HasMaxLength(100)
+                    .IsRequired();
+                copy.HasIndex("Barcode").HasDatabaseName("IX_Copies_Barcode").IsUnique();
             });
         });
     }

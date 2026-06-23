@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Infrastructure.Persistence;
 using ShelfLife.Lending.Domain;
 
@@ -13,6 +14,8 @@ public sealed class LendingDbContext : ShelfLifeDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<OutboxMessage>().ToTable("OutboxMessages", t => t.ExcludeFromMigrations());
 
         modelBuilder.Entity<Loan>(b =>
         {

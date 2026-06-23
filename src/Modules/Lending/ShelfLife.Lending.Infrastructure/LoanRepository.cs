@@ -10,10 +10,10 @@ public sealed class LoanRepository : ILoanRepository
     public LoanRepository(LendingDbContext db) => _db = db;
 
     public Task<Loan?> FindByIdAsync(Guid id, CancellationToken ct = default) =>
-        _db.Loans.Include("_holds").FirstOrDefaultAsync(l => l.Id == id, ct);
+        _db.Loans.Include(l => l.Holds).FirstOrDefaultAsync(l => l.Id == id, ct);
 
     public Task<Loan?> FindActiveLoanByCopyAsync(Guid copyId, CancellationToken ct = default) =>
-        _db.Loans.Include("_holds")
+        _db.Loans.Include(l => l.Holds)
             .FirstOrDefaultAsync(l => l.CopyId == copyId && l.Status == LoanStatus.Active, ct);
 
     public async Task<IReadOnlyList<Loan>> GetOverdueLoansAsync(CancellationToken ct = default)

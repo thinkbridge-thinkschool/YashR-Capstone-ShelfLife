@@ -10,23 +10,23 @@ public static class InsightsEndpoints
     public static RouteGroupBuilder MapInsightsEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/popular-titles", async (
-            int page, int pageSize,
+            int page, int pageSize, string? search,
             InsightsQueryHandler handler,
             CancellationToken ct) =>
         {
             page     = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
-            return Results.Ok(await handler.HandleAsync(new GetPopularTitlesQuery(page, pageSize), ct));
+            return Results.Ok(await handler.HandleAsync(new GetPopularTitlesQuery(page, pageSize, search), ct));
         });
 
         group.MapGet("/overdue-loans", async (
-            int page, int pageSize,
+            int page, int pageSize, string? search,
             InsightsQueryHandler handler,
             CancellationToken ct) =>
         {
             page     = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
-            return Results.Ok(await handler.HandleAsync(new GetOverdueLoansQuery(page, pageSize), ct));
+            return Results.Ok(await handler.HandleAsync(new GetOverdueLoansQuery(page, pageSize, search), ct));
         });
 
         group.MapGet("/member-activity", async (

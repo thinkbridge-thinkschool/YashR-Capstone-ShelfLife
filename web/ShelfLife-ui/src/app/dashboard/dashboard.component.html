@@ -1,9 +1,24 @@
-<div class="page-header">
-  <h2>Dashboard</h2>
+<!-- ── Welcome section ───────────────────────────────────────────────────── -->
+<div class="dashboard-welcome">
+  <div class="welcome-text">
+    @if (auth.currentUser(); as user) {
+      <h2>Welcome back, {{ user.displayName }}</h2>
+      @if (auth.isLibrarian()) {
+        <p>Library management overview &mdash; {{ today | date:'EEEE, MMMM d, y' }}</p>
+      } @else {
+        <p>Your library activity &mdash; {{ today | date:'EEEE, MMMM d, y' }}</p>
+      }
+    } @else {
+      <h2>Dashboard</h2>
+      <p>Library overview</p>
+    }
+  </div>
+
   @if (auth.currentUser(); as user) {
-    <p>Welcome back, <strong>{{ user.displayName }}</strong> &mdash;
-      logged in as <strong>{{ user.role }}</strong>
-    </p>
+    <span class="welcome-badge" [class.librarian]="auth.isLibrarian()">
+      <mat-icon>{{ auth.isLibrarian() ? 'badge' : 'person' }}</mat-icon>
+      {{ user.role }}
+    </span>
   }
 </div>
 
@@ -20,7 +35,7 @@
         @switch (card.status) {
 
           @case ('loading') {
-            <mat-spinner diameter="28" style="margin: 4px 0 8px"></mat-spinner>
+            <mat-spinner diameter="28" style="margin: 4px 0 10px"></mat-spinner>
             <div class="metric-label">{{ card.title }}</div>
           }
 
@@ -31,19 +46,21 @@
           }
 
           @case ('no-api') {
-            <div class="metric-value" style="font-size:16px;color:rgba(0,0,0,0.38)">—</div>
+            <div class="metric-value" style="font-size:22px;color:rgba(0,0,0,0.25)">—</div>
             <div class="metric-label">{{ card.title }}</div>
-            <div class="metric-sub">Data not available from current API</div>
+            <div class="metric-sub">Not available in current API</div>
           }
 
           @case ('role-restricted') {
-            <div class="metric-value" style="font-size:16px;color:rgba(0,0,0,0.38)">—</div>
+            <div style="margin-bottom:10px">
+              <mat-icon style="font-size:22px;width:22px;height:22px;color:rgba(0,0,0,0.2)">lock</mat-icon>
+            </div>
             <div class="metric-label">{{ card.title }}</div>
             <div class="metric-sub">Requires Librarian access</div>
           }
 
           @case ('error') {
-            <div class="metric-value" style="font-size:16px;color:#c62828">!</div>
+            <div class="metric-value" style="font-size:22px;color:#c62828">!</div>
             <div class="metric-label">{{ card.title }}</div>
             <div class="metric-sub">Failed to load</div>
           }
@@ -68,31 +85,47 @@
   <div class="action-row">
 
     @if (auth.isLibrarian()) {
-      <a mat-raised-button color="primary" routerLink="/catalog/add-book">
+
+      <a mat-flat-button color="primary" routerLink="/catalog/add-book">
         <mat-icon>library_add</mat-icon>
         Add Book
       </a>
-      <a mat-raised-button color="primary" routerLink="/catalog/add-copy">
+      <a mat-flat-button color="primary" routerLink="/catalog/add-copy">
         <mat-icon>add_box</mat-icon>
         Add Copy
       </a>
-    }
-
-    <a mat-raised-button color="accent" routerLink="/lending/borrow">
-      <mat-icon>book</mat-icon>
-      Borrow Book
-    </a>
-
-    <a mat-raised-button routerLink="/lending/return">
-      <mat-icon>assignment_return</mat-icon>
-      Return Book
-    </a>
-
-    @if (auth.isLibrarian()) {
-      <a mat-stroked-button routerLink="/insights/overdue">
+      <a mat-flat-button color="primary" routerLink="/lending/borrow">
+        <mat-icon>book</mat-icon>
+        Borrow Book
+      </a>
+      <a mat-stroked-button color="primary" routerLink="/lending/loans">
+        <mat-icon>list_alt</mat-icon>
+        Active Loans
+      </a>
+      <a mat-stroked-button color="warn" routerLink="/insights/overdue">
         <mat-icon>warning_amber</mat-icon>
         Overdue Loans
       </a>
+
+    } @else {
+
+      <a mat-flat-button color="primary" routerLink="/catalog/search">
+        <mat-icon>search</mat-icon>
+        Search Books
+      </a>
+      <a mat-stroked-button color="primary" routerLink="/lending/my-loans">
+        <mat-icon>book</mat-icon>
+        My Loans
+      </a>
+      <a mat-stroked-button color="primary" routerLink="/lending/my-holds">
+        <mat-icon>bookmark</mat-icon>
+        My Holds
+      </a>
+      <a mat-stroked-button routerLink="/identity/profile">
+        <mat-icon>person</mat-icon>
+        Profile
+      </a>
+
     }
 
   </div>

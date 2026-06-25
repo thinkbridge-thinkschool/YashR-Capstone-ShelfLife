@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ShelfLife.Catalog.Application;
 
+
+
 namespace ShelfLife.Api.Endpoints;
 
 public static class CatalogEndpoints
@@ -27,6 +29,18 @@ public static class CatalogEndpoints
             return result.IsSuccess ? Results.Created($"/api/catalog/copies/{result.Value}", new { id = result.Value })
                                     : Results.BadRequest(result.Error);
         }).RequireAuthorization("Librarian");
+
+        group.MapGet("/books", async (
+            int page,
+            int pageSize,
+            string? search,
+            GetBooksHandler handler,
+            CancellationToken ct) =>
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            return Results.Ok(await handler.HandleAsync(new GetBooksQuery(page, pageSize, search), ct));
+        });
 
         return group;
     }

@@ -101,8 +101,15 @@ public sealed class PlaceHoldHandler
 
         if (activeLoan is null) return Result.Failure<Guid>("No active loan found to place hold against.");
 
-        var hold = activeLoan.PlaceHold(Guid.NewGuid(), cmd.MemberId);
-        await _uow.SaveChangesAsync(ct);
-        return Result.Success(hold.Id);
+        try
+        {
+            var hold = activeLoan.PlaceHold(Guid.NewGuid(), cmd.MemberId);
+            await _uow.SaveChangesAsync(ct);
+            return Result.Success(hold.Id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Result.Failure<Guid>(ex.Message);
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShelfLife.Identity.Application;
 
 namespace ShelfLife.Api.Endpoints;
@@ -34,6 +35,18 @@ public static class IdentityEndpoints
             return result.IsSuccess ? Results.Ok(result.Value)
                                     : Results.Unauthorized();
         });
+
+        group.MapGet("/members", async (
+            int page,
+            int pageSize,
+            string? search,
+            GetMembersHandler handler,
+            CancellationToken ct) =>
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            return Results.Ok(await handler.HandleAsync(new GetMembersQuery(page, pageSize, search), ct));
+        }).RequireAuthorization("Librarian");
 
         return group;
     }

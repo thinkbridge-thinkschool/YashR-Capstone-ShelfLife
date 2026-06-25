@@ -15,9 +15,10 @@ public sealed class CatalogDbContext : ShelfLifeDbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // OutboxMessages table is owned by IdentityDbContext's migration.
-        // Keep the EF tracking (reads/writes work) but exclude from this migration.
+        // OutboxMessages and DeadLetterMessages are owned by IdentityDbContext's migration.
+        // Keep EF tracking but exclude from this context's migrations.
         modelBuilder.Entity<OutboxMessage>().ToTable("OutboxMessages", t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<DeadLetterMessage>().ToTable("DeadLetterMessages", t => t.ExcludeFromMigrations());
 
         modelBuilder.Entity<BookTitle>(b =>
         {

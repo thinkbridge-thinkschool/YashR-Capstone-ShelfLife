@@ -42,7 +42,7 @@ export class AuthService {
     return {
       id: p.sub,
       email: p.email,
-      role: p.role,
+      role: p.role ?? 'Member',
       displayName: p.email.split('@')[0],
     };
   });
@@ -73,6 +73,10 @@ export class AuthService {
 
   isLibrarian(): boolean {
     return this.currentUser()?.role === 'Librarian';
+  }
+
+  isMember(): boolean {
+    return this.isLoggedIn() && !this.isLibrarian();
   }
 
   private decode(token: string): JwtPayload | null {

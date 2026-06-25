@@ -15,14 +15,16 @@ export class InsightsService {
   private readonly base = `${environment.apiBaseUrl}/api/v1/insights`;
 
   /** GET /api/v1/insights/popular-titles — requires Librarian role */
-  getPopularTitles(page = 1, pageSize = 20): Observable<PagedList<PopularTitleDto>> {
-    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+  getPopularTitles(page = 1, pageSize = 20, search?: string): Observable<PagedList<PopularTitleDto>> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (search) params = params.set('search', search);
     return this.http.get<PagedList<PopularTitleDto>>(`${this.base}/popular-titles`, { params });
   }
 
   /** GET /api/v1/insights/overdue-loans — requires Librarian role */
-  getOverdueLoans(page = 1, pageSize = 20): Observable<PagedList<OverdueLoanDto>> {
-    const params = new HttpParams().set('page', page).set('pageSize', pageSize);
+  getOverdueLoans(page = 1, pageSize = 20, search?: string): Observable<PagedList<OverdueLoanDto>> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (search) params = params.set('search', search);
     return this.http.get<PagedList<OverdueLoanDto>>(`${this.base}/overdue-loans`, { params });
   }
 

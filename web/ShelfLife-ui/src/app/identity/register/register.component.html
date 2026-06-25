@@ -3,7 +3,9 @@
 
     <mat-card-header>
       <div class="auth-header">
-        <mat-icon class="brand-icon">local_library</mat-icon>
+        <div class="auth-logo">
+          <mat-icon>local_library</mat-icon>
+        </div>
         <h1 class="brand-title">Create Account</h1>
         <p class="brand-subtitle">ShelfLife Library Management System</p>
       </div>
@@ -63,13 +65,13 @@
           </div>
         }
 
-        <button mat-raised-button color="primary" type="submit"
+        <button mat-flat-button color="primary" type="submit"
                 class="full-width submit-btn"
                 [disabled]="loading()">
           @if (loading()) {
             <div class="btn-spinner-wrap">
               <mat-spinner diameter="20"></mat-spinner>
-              <span>Creating account…</span>
+              <span>Creating account&hellip;</span>
             </div>
           } @else {
             Create Account

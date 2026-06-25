@@ -1,0 +1,134 @@
+<div class="page-header">
+  <h2>Members</h2>
+  <p>All registered members. Sorted alphabetically by name.</p>
+</div>
+
+@if (!auth.isLibrarian()) {
+  <div class="role-warning">
+    <mat-icon>lock</mat-icon>
+    <span>
+      This view requires the <strong>Librarian</strong> role.
+      You are logged in as <strong>{{ auth.currentUser()?.role }}</strong>.
+      Sign in as a Librarian to manage members.
+    </span>
+  </div>
+} @else {
+
+  <mat-card class="table-card">
+
+    <div class="table-header">
+      <span class="table-title">Registered Members</span>
+      @if (totalCount() > 0) {
+        <span class="table-count">{{ totalCount() }} members</span>
+      }
+    </div>
+
+    <div style="padding: 0 16px 16px">
+      <mat-form-field appearance="outline" style="width: 100%; max-width: 420px">
+        <mat-label>Search by name or email</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput
+               [value]="searchValue()"
+               (input)="onSearchInput($any($event.target).value)"
+               placeholder="e.g. John or john@example.com">
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-row">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Loading members&hellip;</span>
+      </div>
+    } @else if (error()) {
+      <div class="error-banner" style="margin:16px">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    } @else if (data().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">group</mat-icon>
+        <p class="empty-title">No members yet</p>
+        <p class="empty-hint">Members will appear here once they register.</p>
+      </div>
+    } @else {
+
+      <table mat-table [dataSource]="data()">
+
+        <ng-container matColumnDef="fullName">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let row">{{ row.fullName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let row"
+              style="color:rgba(0,0,0,0.6);font-size:13px">{{ row.email }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="role-chip"
+                  [style.background]="row.role === 'Librarian' ? 'rgba(21,101,192,0.1)' : 'rgba(0,0,0,0.06)'"
+                  [style.color]="row.role === 'Librarian' ? '#1565c0' : 'rgba(0,0,0,0.6)'">
+              {{ row.role }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.isBlocked) {
+              <span style="color:#c62828;font-size:13px;font-weight:500">Blocked</span>
+            } @else {
+              <span style="color:#2e7d32;font-size:13px;font-weight:500">Active</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="registeredAt">
+          <th mat-header-cell *matHeaderCellDef>Registered</th>
+          <td mat-cell *matCellDef="let row"
+              style="color:rgba(0,0,0,0.6);font-size:13px">
+            {{ row.registeredAt | date:'mediumDate' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="memberId">
+          <th mat-header-cell *matHeaderCellDef>Member ID</th>
+          <td mat-cell *matCellDef="let row">
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;font-family:monospace;color:rgba(0,0,0,0.45)">
+                {{ row.memberId | slice:0:8 }}&hellip;
+              </span>
+              <button mat-icon-button
+                      style="width:24px;height:24px;line-height:24px"
+                      [matTooltip]="copiedId() === row.memberId ? 'Copied!' : 'Copy full ID'"
+                      (click)="copyId(row.memberId)">
+                <mat-icon style="font-size:14px;width:14px;height:14px">
+                  {{ copiedId() === row.memberId ? 'done' : 'content_copy' }}
+                </mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+      </table>
+
+      <mat-paginator
+        [length]="totalCount()"
+        [pageSize]="20"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+
+    }
+
+  </mat-card>
+
+}

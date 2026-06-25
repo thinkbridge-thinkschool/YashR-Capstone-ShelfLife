@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShelfLife.Notifications.Application;
@@ -10,7 +11,8 @@ public static class NotificationsModule
     public static IServiceCollection AddNotificationsModule(this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<NotificationsDbContext>(opts =>
-            opts.UseSqlServer(config.GetConnectionString("ShelfLife")));
+            opts.UseSqlServer(config.GetConnectionString("ShelfLife"))
+                .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
         services.AddScoped<INotificationSender, SmtpNotificationSender>();
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();

@@ -1,6 +1,6 @@
 <div class="page-header">
   <h2>Popular Books</h2>
-  <p>Insights Module &mdash; GET /api/v1/insights/popular-titles</p>
+  <p>Most-borrowed titles across the library. Ranked by total loan count.</p>
 </div>
 
 @if (!auth.isLibrarian()) {
@@ -17,15 +17,27 @@
   <mat-card class="table-card">
 
     <div class="table-header">
-      <strong>Most Borrowed Titles</strong>
-      <span style="float:right;font-size:13px;color:rgba(0,0,0,0.54)">
-        {{ totalCount() }} total
-      </span>
+      <span class="table-title">Most Borrowed Titles</span>
+      @if (totalCount() > 0) {
+        <span class="table-count">{{ totalCount() }} titles</span>
+      }
+    </div>
+
+    <div style="padding: 0 16px 16px">
+      <mat-form-field appearance="outline" style="width: 100%; max-width: 420px">
+        <mat-label>Search by title or author</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput
+               [value]="searchValue()"
+               (input)="onSearchInput($any($event.target).value)"
+               placeholder="e.g. Harry Potter or J.K. Rowling">
+      </mat-form-field>
     </div>
 
     @if (loading()) {
       <div class="loading-row">
-        <mat-spinner diameter="36"></mat-spinner>
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Loading popular titles&hellip;</span>
       </div>
     } @else if (error()) {
       <div class="error-banner" style="margin:16px">
@@ -33,9 +45,10 @@
         <span>{{ error() }}</span>
       </div>
     } @else if (data().length === 0) {
-      <div class="loading-row" style="color:rgba(0,0,0,0.38)">
-        <mat-icon style="margin-right:8px">info</mat-icon>
-        No data yet — borrow some books first.
+      <div class="empty-state">
+        <mat-icon class="empty-icon">trending_up</mat-icon>
+        <p class="empty-title">No data yet</p>
+        <p class="empty-hint">Borrow some books to start tracking popular titles.</p>
       </div>
     } @else {
 

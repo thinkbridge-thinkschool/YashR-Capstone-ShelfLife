@@ -1,0 +1,135 @@
+<div class="page-header">
+  <h2>{{ pageTitle() }}</h2>
+  <p>{{ pageSubtitle() }}</p>
+</div>
+
+<mat-card class="table-card">
+
+  <div class="table-header">
+    <span class="table-title">{{ pageTitle() }}</span>
+    @if (totalCount() > 0) {
+      <span class="table-count">{{ totalCount() }} loans</span>
+    }
+  </div>
+
+  <div style="padding: 0 16px 16px">
+    <mat-form-field appearance="outline" style="width: 100%; max-width: 420px">
+      <mat-label>Search by member name, email or book title</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput
+             [value]="searchValue()"
+             (input)="onSearchInput($any($event.target).value)"
+             placeholder="e.g. John Doe or Harry Potter">
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-row">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>Loading loans&hellip;</span>
+    </div>
+  } @else if (error()) {
+    <div class="error-banner" style="margin:16px">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (data().length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">book</mat-icon>
+      @if (activeOnly()) {
+        <p class="empty-title">No active loans</p>
+        <p class="empty-hint">All borrowed books have been returned.</p>
+      } @else {
+        <p class="empty-title">No loan history</p>
+        <p class="empty-hint">Loans will appear here once a book is borrowed.</p>
+      }
+    </div>
+  } @else {
+
+    <table mat-table [dataSource]="data()">
+
+      <ng-container matColumnDef="member">
+        <th mat-header-cell *matHeaderCellDef>Member</th>
+        <td mat-cell *matCellDef="let row">
+          <div style="font-weight:500">{{ row.memberName }}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,0.5)">{{ row.memberEmail }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="book">
+        <th mat-header-cell *matHeaderCellDef>Book</th>
+        <td mat-cell *matCellDef="let row">
+          <div style="font-weight:500">{{ row.bookTitle }}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,0.5)">{{ row.author }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="borrowedAt">
+        <th mat-header-cell *matHeaderCellDef>Borrowed</th>
+        <td mat-cell *matCellDef="let row"
+            style="color:rgba(0,0,0,0.6);font-size:13px">
+          {{ row.borrowedAt | date:'mediumDate' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="dueDate">
+        <th mat-header-cell *matHeaderCellDef>Due Date</th>
+        <td mat-cell *matCellDef="let row"
+            [style.color]="row.isOverdue ? '#c62828' : 'rgba(0,0,0,0.6)'"
+            style="font-size:13px;font-weight:500">
+          {{ row.dueDate | date:'mediumDate' }}
+          @if (row.isOverdue) {
+            <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle;margin-left:4px">warning_amber</mat-icon>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.isOverdue) {
+            <span class="role-chip" style="background:rgba(198,40,40,0.1);color:#c62828">Overdue</span>
+          } @else if (row.status === 'Active') {
+            <span class="role-chip" style="background:rgba(21,101,192,0.1);color:#1565c0">Active</span>
+          } @else {
+            <span class="role-chip" style="background:rgba(46,125,50,0.1);color:#2e7d32">Returned</span>
+          }
+        </td>
+      </ng-container>
+
+      <!-- Return action — only rendered when activeOnly = true (column excluded from history) -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-stroked-button
+                  color="primary"
+                  style="font-size:12px;height:32px;line-height:32px"
+                  matTooltip="Mark this book as returned"
+                  [disabled]="returningId() === row.loanId"
+                  (click)="returnLoan(row.loanId)">
+            @if (returningId() === row.loanId) {
+              <mat-spinner diameter="16" style="display:inline-block"></mat-spinner>
+            } @else {
+              <mat-icon style="font-size:16px;width:16px;height:16px;margin-right:4px">assignment_return</mat-icon>
+              Return
+            }
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+    </table>
+
+    <mat-paginator
+      [length]="totalCount()"
+      [pageSize]="20"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+
+  }
+
+</mat-card>

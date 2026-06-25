@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { CatalogService } from '../catalog.service';
 import { AuthService } from '../../shared/services/auth.service';
 
@@ -32,6 +33,7 @@ interface BookResult {
 export class AddBookComponent {
   private readonly fb = inject(FormBuilder);
   private readonly catalog = inject(CatalogService);
+  private readonly snackBar = inject(MatSnackBar);
   readonly auth = inject(AuthService);
 
   readonly form = this.fb.nonNullable.group({
@@ -54,6 +56,7 @@ export class AddBookComponent {
         this.loading.set(false);
         this.result.set({ bookTitleId: res.id });
         this.form.reset();
+        this.snackBar.open('Book title registered successfully.', 'Dismiss', { duration: 4000 });
       },
       error: err => {
         this.loading.set(false);

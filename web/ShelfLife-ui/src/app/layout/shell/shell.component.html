@@ -5,13 +5,18 @@
 
     <!-- Brand -->
     <div class="sidenav-brand">
-      <mat-icon class="brand-icon">local_library</mat-icon>
-      <span class="brand-name">ShelfLife</span>
+      <div class="brand-logo">
+        <mat-icon>local_library</mat-icon>
+      </div>
+      <div class="brand-info">
+        <span class="brand-name">ShelfLife</span>
+        <span class="brand-sub">Library System</span>
+      </div>
     </div>
 
     <mat-nav-list>
 
-      <!-- Dashboard -->
+      <!-- Dashboard — shared -->
       <mat-list-item
         routerLink="/dashboard"
         routerLinkActive="active-nav"
@@ -20,44 +25,94 @@
         <span matListItemTitle>Dashboard</span>
       </mat-list-item>
 
-      <!-- ── Catalog bounded context ─────────────────────────────────── -->
-      <div class="nav-section-label">Catalog</div>
+      @if (auth.isLibrarian()) {
 
-      <mat-list-item routerLink="/catalog/add-book" routerLinkActive="active-nav">
-        <mat-icon matListItemIcon>library_add</mat-icon>
-        <span matListItemTitle>Add Book</span>
-      </mat-list-item>
+        <!-- ── LIBRARIAN NAV ─────────────────────────────────────────── -->
 
-      <mat-list-item routerLink="/catalog/add-copy" routerLinkActive="active-nav">
-        <mat-icon matListItemIcon>add_box</mat-icon>
-        <span matListItemTitle>Add Copy</span>
-      </mat-list-item>
+        <div class="nav-section-label">Catalog</div>
 
-      <!-- ── Lending bounded context ─────────────────────────────────── -->
-      <div class="nav-section-label">Lending</div>
+        <mat-list-item routerLink="/catalog/add-book" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>library_add</mat-icon>
+          <span matListItemTitle>Add Book</span>
+        </mat-list-item>
 
-      <mat-list-item routerLink="/lending/borrow" routerLinkActive="active-nav">
-        <mat-icon matListItemIcon>book</mat-icon>
-        <span matListItemTitle>Borrow Book</span>
-      </mat-list-item>
+        <mat-list-item routerLink="/catalog/add-copy" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>add_box</mat-icon>
+          <span matListItemTitle>Add Copy</span>
+        </mat-list-item>
 
-      <mat-list-item routerLink="/lending/return" routerLinkActive="active-nav">
-        <mat-icon matListItemIcon>assignment_return</mat-icon>
-        <span matListItemTitle>Return Book</span>
-      </mat-list-item>
+        <div class="nav-section-label">Lending</div>
 
-      <!-- ── Insights bounded context ───────────────────────────────── -->
-      <div class="nav-section-label">Insights</div>
+        <mat-list-item routerLink="/lending/loans" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>list_alt</mat-icon>
+          <span matListItemTitle>Active Loans</span>
+        </mat-list-item>
 
-      <mat-list-item routerLink="/insights/popular" routerLinkActive="active-nav">
-        <mat-icon matListItemIcon>trending_up</mat-icon>
-        <span matListItemTitle>Popular Books</span>
-      </mat-list-item>
+        <mat-list-item routerLink="/lending/loan-history" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>history</mat-icon>
+          <span matListItemTitle>Loan History</span>
+        </mat-list-item>
 
-      <mat-list-item routerLink="/insights/overdue" routerLinkActive="active-nav">
-        <mat-icon matListItemIcon>warning_amber</mat-icon>
-        <span matListItemTitle>Overdue Loans</span>
-      </mat-list-item>
+        <mat-list-item routerLink="/lending/borrow" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>book</mat-icon>
+          <span matListItemTitle>Borrow Book</span>
+        </mat-list-item>
+
+        <mat-list-item routerLink="/lending/holds" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>bookmark</mat-icon>
+          <span matListItemTitle>Holds Queue</span>
+        </mat-list-item>
+
+        <div class="nav-section-label">Insights</div>
+
+        <mat-list-item routerLink="/insights/popular" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>trending_up</mat-icon>
+          <span matListItemTitle>Popular Books</span>
+        </mat-list-item>
+
+        <mat-list-item routerLink="/insights/overdue" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>warning_amber</mat-icon>
+          <span matListItemTitle>Overdue Loans</span>
+        </mat-list-item>
+
+        <div class="nav-section-label">Management</div>
+
+        <mat-list-item routerLink="/identity/members" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>group</mat-icon>
+          <span matListItemTitle>Members</span>
+        </mat-list-item>
+
+      } @else {
+
+        <!-- ── MEMBER NAV ─────────────────────────────────────────────── -->
+
+        <div class="nav-section-label">Library</div>
+
+        <mat-list-item routerLink="/catalog/search" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>search</mat-icon>
+          <span matListItemTitle>Search Books</span>
+        </mat-list-item>
+
+        <div class="nav-section-label">My Activity</div>
+
+        <mat-list-item routerLink="/lending/my-loans" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>book</mat-icon>
+          <span matListItemTitle>My Loans</span>
+        </mat-list-item>
+
+        <mat-list-item routerLink="/lending/my-holds" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>bookmark</mat-icon>
+          <span matListItemTitle>My Holds</span>
+        </mat-list-item>
+
+        <div class="nav-section-label">Account</div>
+
+        <mat-list-item routerLink="/identity/profile" routerLinkActive="active-nav">
+          <mat-icon matListItemIcon>person</mat-icon>
+          <span matListItemTitle>Profile</span>
+        </mat-list-item>
+
+      }
 
       <!-- Spacer pushes Logout to bottom -->
       <div class="sidenav-spacer"></div>
@@ -78,14 +133,17 @@
 
     <!-- Top toolbar -->
     <mat-toolbar color="primary" class="top-toolbar">
-      <span>ShelfLife</span>
+      <span style="font-size:17px;font-weight:700;letter-spacing:-0.2px">ShelfLife</span>
       <span class="toolbar-spacer"></span>
 
       @if (auth.currentUser(); as user) {
-        <span class="user-email">{{ user.email }}</span>
-        <span class="role-chip" [class.librarian-chip]="auth.isLibrarian()">
-          {{ user.role }}
-        </span>
+        <div class="toolbar-user">
+          <span class="user-email">{{ user.email }}</span>
+          <span class="role-chip" [class.librarian-chip]="auth.isLibrarian()">
+            {{ user.role }}
+          </span>
+          <div class="user-avatar">{{ user.displayName[0] }}</div>
+        </div>
       }
     </mat-toolbar>
 

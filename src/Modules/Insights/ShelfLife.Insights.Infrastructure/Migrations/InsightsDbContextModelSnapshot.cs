@@ -22,6 +22,50 @@ namespace ShelfLife.Insights.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ShelfLife.Infrastructure.Outbox.DeadLetterMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastError")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OriginalMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TopicName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DeadLetterMessages", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("ShelfLife.Infrastructure.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -33,6 +77,9 @@ namespace ShelfLife.Insights.Infrastructure.Migrations
 
                     b.Property<string>("Error")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("NextRetryAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Payload")
                         .IsRequired()

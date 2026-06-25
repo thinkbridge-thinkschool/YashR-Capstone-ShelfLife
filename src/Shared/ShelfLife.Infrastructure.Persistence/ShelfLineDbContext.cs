@@ -9,6 +9,7 @@ public abstract class ShelfLifeDbContext : DbContext, IUnitOfWork
     protected ShelfLifeDbContext(DbContextOptions options) : base(options) { }
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<DeadLetterMessage> DeadLetterMessages => Set<DeadLetterMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,6 +20,17 @@ public abstract class ShelfLifeDbContext : DbContext, IUnitOfWork
             b.Property(x => x.Type).HasMaxLength(500).IsRequired();
             b.Property(x => x.TopicName).HasMaxLength(200).IsRequired();
             b.Property(x => x.Payload).IsRequired();
+        });
+
+        modelBuilder.Entity<DeadLetterMessage>(b =>
+        {
+            b.ToTable("DeadLetterMessages");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Type).HasMaxLength(500).IsRequired();
+            b.Property(x => x.TopicName).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Payload).IsRequired();
+            b.Property(x => x.LastError).IsRequired();
+            b.HasIndex(x => x.OriginalMessageId);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { LendingService } from '../lending.service';
 import { BorrowBookResponse } from '../../shared/models/lending.models';
 
@@ -32,8 +33,10 @@ import { BorrowBookResponse } from '../../shared/models/lending.models';
 export class BorrowBookComponent {
   private readonly fb = inject(FormBuilder);
   private readonly lending = inject(LendingService);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly form = this.fb.nonNullable.group({
+    memberId: ['', [Validators.required]],
     bookTitleId: ['', [Validators.required]],
   });
 
@@ -49,11 +52,13 @@ export class BorrowBookComponent {
     this.loading.set(true);
     this.error.set(null);
 
-    this.lending.borrowBook(this.form.getRawValue().bookTitleId.trim()).subscribe({
+    const { memberId, bookTitleId } = this.form.getRawValue();
+    this.lending.borrowBook(memberId.trim(), bookTitleId.trim()).subscribe({
       next: res => {
         this.loading.set(false);
         this.result.set(res);
         this.form.reset();
+        this.snackBar.open('Loan issued successfully.', 'Dismiss', { duration: 4000 });
       },
       error: err => {
         this.loading.set(false);

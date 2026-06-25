@@ -17,6 +17,7 @@ public sealed class InsightsDbContext : ShelfLifeDbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<OutboxMessage>().ToTable("OutboxMessages", t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<DeadLetterMessage>().ToTable("DeadLetterMessages", t => t.ExcludeFromMigrations());
 
         modelBuilder.Entity<PopularTitleProjection>(b =>
         {

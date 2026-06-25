@@ -1,44 +1,55 @@
 <div class="page-header">
   <h2>Borrow Book</h2>
-  <p>Issue a 21-day loan for an available book title.</p>
+  <p>Issue a 21-day loan for an available book title. The borrower's account is charged automatically.</p>
 </div>
 
 <mat-card class="form-card">
   <mat-card-header>
     <mat-card-title>
-      <mat-icon style="vertical-align:middle;margin-right:8px">book</mat-icon>
+      <mat-icon style="vertical-align:middle;margin-right:8px;color:#3f51b5">book</mat-icon>
       New Loan
     </mat-card-title>
-    <mat-card-subtitle>Lending Module &mdash; POST /api/v1/lending/loans</mat-card-subtitle>
+    <mat-card-subtitle>Lending &mdash; POST /api/v1/lending/loans</mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
-      <mat-form-field appearance="outline" class="full-width" style="margin-top:12px">
+      <mat-form-field appearance="outline" class="full-width" style="margin-top:16px">
+        <mat-label>Member ID</mat-label>
+        <mat-icon matPrefix>person</mat-icon>
+        <input matInput formControlName="memberId"
+               placeholder="UUID of the member borrowing the book">
+        <mat-hint>Find the Member ID on the Members page</mat-hint>
+        @if (form.controls.memberId.hasError('required') && form.controls.memberId.touched) {
+          <mat-error>Member ID is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
         <mat-label>Book Title ID</mat-label>
         <mat-icon matPrefix>bookmark</mat-icon>
         <input matInput formControlName="bookTitleId"
                placeholder="UUID of the book title to borrow">
-        <mat-hint>Paste the Book Title ID from the Catalog step</mat-hint>
+        <mat-hint>Paste the Book Title ID from the Add Book step</mat-hint>
         @if (form.controls.bookTitleId.hasError('required') && form.controls.bookTitleId.touched) {
           <mat-error>Book Title ID is required</mat-error>
         }
       </mat-form-field>
 
       @if (error()) {
-        <div class="error-banner" style="margin-top:12px">
+        <div class="error-banner">
           <mat-icon>error_outline</mat-icon>
           <span>{{ error() }}</span>
         </div>
       }
 
-      <div style="margin-top:16px">
-        <button mat-raised-button color="primary" type="submit" [disabled]="loading()">
+      <div class="form-actions">
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
           @if (loading()) {
             <div class="btn-spinner-wrap">
               <mat-spinner diameter="20"></mat-spinner>
-              <span>Processing…</span>
+              <span>Processing&hellip;</span>
             </div>
           } @else {
             <mat-icon>book</mat-icon> Borrow
@@ -51,9 +62,9 @@
 </mat-card>
 
 @if (result()) {
-  <div class="result-panel" style="max-width:560px;margin-top:20px">
+  <div class="result-panel">
     <div class="result-title">
-      <mat-icon style="font-size:16px;vertical-align:middle;margin-right:4px">check_circle</mat-icon>
+      <mat-icon>check_circle</mat-icon>
       Loan created successfully
     </div>
 
@@ -75,12 +86,12 @@
 
     <div class="result-row">
       <span class="result-label">Status</span>
-      <span class="result-value" style="color:#2e7d32;font-weight:500">Active</span>
+      <span style="font-size:13px;font-weight:600;color:#2e7d32">Active</span>
     </div>
 
-    <div class="info-banner" style="margin-top:8px">
+    <div class="info-banner" style="margin-top:8px;margin-bottom:0">
       <mat-icon>info</mat-icon>
-      <span>Copy this Loan ID — you will need it to return the book.</span>
+      <span>Save this Loan ID &mdash; you will need it when returning the book.</span>
     </div>
   </div>
 }

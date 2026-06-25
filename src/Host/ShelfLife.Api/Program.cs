@@ -16,6 +16,8 @@ using ShelfLife.Identity.Application;
 using ShelfLife.Identity.Domain;
 using ShelfLife.Identity.Infrastructure;
 using ShelfLife.Infrastructure.Messaging;
+using ShelfLife.Infrastructure.Outbox;
+using ShelfLife.Infrastructure.Persistence;
 using ShelfLife.Insights.Infrastructure;
 using ShelfLife.Lending.Infrastructure;
 using ShelfLife.Notifications.Infrastructure;
@@ -139,6 +141,14 @@ builder.Services.AddSingleton(sp => new ServiceBusClient(
     builder.Configuration["ServiceBus:FullyQualifiedNamespace"],
     new DefaultAzureCredential()));
 builder.Services.AddScoped<IMessagePublisher, ServiceBusPublisher>();
+
+// ── Outbox relay ──────────────────────────────────────────────────────────────
+// EfOutboxStore uses IdentityDbContext because Identity's migration owns the
+// OutboxMessages and DeadLetterMessages tables (no circular dependency).
+builder.Services.AddScoped<IOutboxStore>(sp =>
+    new EfOutboxStore(sp.GetRequiredService<IdentityDbContext>()));
+builder.Services.AddScoped<OutboxRelayProcessor>();
+builder.Services.AddHostedService<OutboxRelayWorker>();
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 builder.Services.AddIdentityModule(builder.Configuration);

@@ -46,6 +46,7 @@ export class LoginComponent {
     const { email, password } = this.form.getRawValue();
     this.auth.login({ email, password }).subscribe({
       next: () => this.router.navigate(['/dashboard']),
+      // dashboard detects role and adjusts content — no role-split redirect needed here
       error: err => {
         this.loading.set(false);
         this.error.set(

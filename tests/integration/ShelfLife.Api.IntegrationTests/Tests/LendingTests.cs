@@ -76,22 +76,30 @@ public sealed class LendingTests(ShelfLifeApiFactory factory)
         return bookTitleId;
     }
 
+    /// <summary>
+    /// Creates a librarian HTTP client (no DB round-trip needed — token is signed directly).
+    /// </summary>
+    private HttpClient LibrarianClient()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestTokenHelper.LibrarianToken(Guid.NewGuid()));
+        return client;
+    }
+
     // ── Borrow Book ───────────────────────────────────────────────────────────
 
     [Fact]
     public async Task BorrowBook_AvailableCopy_Returns201AndLoanAndCopyStatusUpdated()
     {
-        // Arrange
+        // Arrange — librarian issues the loan on behalf of a registered member
         var bookTitleId = await AddBookWithCopyAsync();
-
-        var memberClient = factory.CreateClient();
-        var memberId = await RegisterMemberAsync(memberClient);
-        memberClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", TestTokenHelper.MemberToken(memberId));
+        var memberId = await RegisterMemberAsync(factory.CreateClient());
+        var libClient = LibrarianClient();
 
         // Act
-        var response = await memberClient.PostAsJsonAsync("/api/v1/lending/loans",
-            new { BookTitleId = bookTitleId });
+        var response = await libClient.PostAsJsonAsync("/api/v1/lending/loans",
+            new { MemberId = memberId, BookTitleId = bookTitleId });
 
         // Assert — HTTP 201 with loan ID + due date
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -120,24 +128,18 @@ public sealed class LendingTests(ShelfLifeApiFactory factory)
     [Fact]
     public async Task BorrowBook_NoCopyAvailable_Returns400()
     {
-        // Arrange — book with one copy already on loan
+        // Arrange — librarian loans the one copy to member1
         var bookTitleId = await AddBookWithCopyAsync();
-
-        var member1 = factory.CreateClient();
-        var member1Id = await RegisterMemberAsync(member1);
-        member1.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", TestTokenHelper.MemberToken(member1Id));
-        (await member1.PostAsJsonAsync("/api/v1/lending/loans", new { BookTitleId = bookTitleId }))
+        var member1Id = await RegisterMemberAsync(factory.CreateClient());
+        var libClient = LibrarianClient();
+        (await libClient.PostAsJsonAsync("/api/v1/lending/loans",
+            new { MemberId = member1Id, BookTitleId = bookTitleId }))
             .EnsureSuccessStatusCode();
 
-        // Act — second member tries to borrow the same (now unavailable) book
-        var member2 = factory.CreateClient();
-        var member2Id = await RegisterMemberAsync(member2);
-        member2.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", TestTokenHelper.MemberToken(member2Id));
-
-        var response = await member2.PostAsJsonAsync("/api/v1/lending/loans",
-            new { BookTitleId = bookTitleId });
+        // Act — librarian tries to loan the same (now unavailable) book to member2
+        var member2Id = await RegisterMemberAsync(factory.CreateClient());
+        var response = await libClient.PostAsJsonAsync("/api/v1/lending/loans",
+            new { MemberId = member2Id, BookTitleId = bookTitleId });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -147,21 +149,18 @@ public sealed class LendingTests(ShelfLifeApiFactory factory)
     [Fact]
     public async Task ReturnBook_ActiveLoan_Returns200AndLoanAndCopyStatusUpdated()
     {
-        // Arrange — borrow a copy
+        // Arrange — librarian issues a loan
         var bookTitleId = await AddBookWithCopyAsync();
+        var memberId = await RegisterMemberAsync(factory.CreateClient());
+        var libClient = LibrarianClient();
 
-        var memberClient = factory.CreateClient();
-        var memberId = await RegisterMemberAsync(memberClient);
-        memberClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", TestTokenHelper.MemberToken(memberId));
-
-        var borrowResp = await memberClient.PostAsJsonAsync("/api/v1/lending/loans",
-            new { BookTitleId = bookTitleId });
+        var borrowResp = await libClient.PostAsJsonAsync("/api/v1/lending/loans",
+            new { MemberId = memberId, BookTitleId = bookTitleId });
         borrowResp.EnsureSuccessStatusCode();
         var borrowed = await borrowResp.Content.ReadFromJsonAsync<BorrowBody>();
 
-        // Act — return it
-        var returnResp = await memberClient.PostAsJsonAsync(
+        // Act — librarian processes the return
+        var returnResp = await libClient.PostAsJsonAsync(
             $"/api/v1/lending/loans/{borrowed!.LoanId}/return", new { });
 
         // Assert — HTTP 200
@@ -185,22 +184,21 @@ public sealed class LendingTests(ShelfLifeApiFactory factory)
     [Fact]
     public async Task ReturnBook_AlreadyReturned_Returns400()
     {
-        // Arrange — borrow then return
+        // Arrange — librarian borrows then returns
         var bookTitleId = await AddBookWithCopyAsync();
+        var memberId = await RegisterMemberAsync(factory.CreateClient());
+        var libClient = LibrarianClient();
 
-        var memberClient = factory.CreateClient();
-        var memberId = await RegisterMemberAsync(memberClient);
-        memberClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", TestTokenHelper.MemberToken(memberId));
-
-        var borrowResp = await memberClient.PostAsJsonAsync("/api/v1/lending/loans",
-            new { BookTitleId = bookTitleId });
+        var borrowResp = await libClient.PostAsJsonAsync("/api/v1/lending/loans",
+            new { MemberId = memberId, BookTitleId = bookTitleId });
+        borrowResp.EnsureSuccessStatusCode();
         var borrowed = await borrowResp.Content.ReadFromJsonAsync<BorrowBody>();
 
-        await memberClient.PostAsJsonAsync($"/api/v1/lending/loans/{borrowed!.LoanId}/return", new { });
+        (await libClient.PostAsJsonAsync($"/api/v1/lending/loans/{borrowed!.LoanId}/return", new { }))
+            .EnsureSuccessStatusCode();
 
         // Act — attempt a second return on the same loan
-        var response = await memberClient.PostAsJsonAsync(
+        var response = await libClient.PostAsJsonAsync(
             $"/api/v1/lending/loans/{borrowed.LoanId}/return", new { });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);

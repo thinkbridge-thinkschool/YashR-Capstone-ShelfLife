@@ -1,0 +1,137 @@
+<div class="page-header">
+  <h2>Search Books</h2>
+  <p>Browse the library catalog. Borrow available books at the desk, or place a hold on unavailable ones.</p>
+</div>
+
+<mat-card class="table-card">
+
+  <div class="table-header">
+    <span class="table-title">Book Catalog</span>
+    @if (totalCount() > 0) {
+      <span class="table-count">{{ totalCount() }} books</span>
+    }
+  </div>
+
+  <div style="padding: 0 16px 16px">
+    <mat-form-field appearance="outline" style="width: 100%; max-width: 420px">
+      <mat-label>Search by title or author</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput
+             [value]="searchValue()"
+             (input)="onSearchInput($any($event.target).value)"
+             placeholder="e.g. Harry Potter">
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-row">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>Searching catalog&hellip;</span>
+    </div>
+  } @else if (error()) {
+    <div class="error-banner" style="margin:16px">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (data().length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">menu_book</mat-icon>
+      <p class="empty-title">No books found</p>
+      <p class="empty-hint">Try a different search term or clear the search to browse all books.</p>
+    </div>
+  } @else {
+
+    <table mat-table [dataSource]="data()">
+
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>Title</th>
+        <td mat-cell *matCellDef="let row">
+          <div style="font-weight:500">{{ row.title }}</div>
+          <div style="font-size:12px;color:rgba(0,0,0,0.5)">{{ row.author }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="author">
+        <th mat-header-cell *matHeaderCellDef>Author</th>
+        <td mat-cell *matCellDef="let row"
+            style="color:rgba(0,0,0,0.6);font-size:13px">{{ row.author }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="isbn">
+        <th mat-header-cell *matHeaderCellDef>ISBN</th>
+        <td mat-cell *matCellDef="let row"
+            style="color:rgba(0,0,0,0.5);font-size:12px;font-family:monospace">{{ row.isbn }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="availability">
+        <th mat-header-cell *matHeaderCellDef>Availability</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.availableCopies > 0) {
+            <span style="color:#2e7d32;font-weight:500">
+              {{ row.availableCopies }} / {{ row.totalCopies }} available
+            </span>
+          } @else {
+            <span style="color:#c62828;font-weight:500">
+              0 / {{ row.totalCopies }} available
+            </span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.availableCopies > 0) {
+            <span class="role-chip"
+                  style="background:rgba(46,125,50,0.1);color:#2e7d32">
+              Available
+            </span>
+          } @else if (row.totalCopies === 0) {
+            <span class="role-chip"
+                  style="background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.4)">
+              No copies
+            </span>
+          } @else {
+            <button mat-stroked-button
+                    color="accent"
+                    style="font-size:12px;height:32px;line-height:32px"
+                    matTooltip="Reserve this book — you will be notified when a copy is available"
+                    [disabled]="placingHoldFor() === row.bookTitleId"
+                    (click)="placeHold(row.bookTitleId)">
+              @if (placingHoldFor() === row.bookTitleId) {
+                <mat-spinner diameter="16" style="display:inline-block"></mat-spinner>
+              } @else {
+                <mat-icon style="font-size:16px;width:16px;height:16px;margin-right:4px">bookmark_add</mat-icon>
+                Place Hold
+              }
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+    </table>
+
+    <mat-paginator
+      [length]="totalCount()"
+      [pageSize]="20"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+
+  }
+
+</mat-card>
+
+<!-- Info banner -->
+<div class="info-banner" style="margin-top:16px">
+  <mat-icon>info</mat-icon>
+  <span>
+    To borrow an available book, visit the library desk and ask the librarian to issue a loan.
+    For unavailable books, click <strong>Place Hold</strong> to join the queue — check
+    <a routerLink="/lending/my-holds" style="color:#1565c0">My Holds</a> for status updates.
+  </span>
+</div>

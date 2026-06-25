@@ -1,0 +1,104 @@
+<div class="page-header">
+  <h2>Holds</h2>
+  <p>Books currently on hold by members. Sorted by hold date, newest first.</p>
+</div>
+
+@if (!auth.isLibrarian()) {
+  <div class="role-warning">
+    <mat-icon>lock</mat-icon>
+    <span>
+      This view requires the <strong>Librarian</strong> role.
+      You are logged in as <strong>{{ auth.currentUser()?.role }}</strong>.
+      Sign in as a Librarian to view holds.
+    </span>
+  </div>
+} @else {
+
+  <mat-card class="table-card">
+
+    <div class="table-header">
+      <span class="table-title">Active Holds</span>
+      @if (totalCount() > 0) {
+        <span class="table-count">{{ totalCount() }} holds</span>
+      }
+    </div>
+
+    <div style="padding: 0 16px 16px">
+      <mat-form-field appearance="outline" style="width: 100%; max-width: 420px">
+        <mat-label>Search by member name or book title</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput
+               [value]="searchValue()"
+               (input)="onSearchInput($any($event.target).value)"
+               placeholder="e.g. John Doe or Harry Potter">
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-row">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Loading holds&hellip;</span>
+      </div>
+    } @else if (error()) {
+      <div class="error-banner" style="margin:16px">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    } @else if (data().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">bookmark_border</mat-icon>
+        <p class="empty-title">No holds</p>
+        <p class="empty-hint">No members have placed holds on any books.</p>
+      </div>
+    } @else {
+
+      <table mat-table [dataSource]="data()">
+
+        <ng-container matColumnDef="bookTitle">
+          <th mat-header-cell *matHeaderCellDef>Book</th>
+          <td mat-cell *matCellDef="let row">{{ row.bookTitle }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="memberName">
+          <th mat-header-cell *matHeaderCellDef>Member</th>
+          <td mat-cell *matCellDef="let row">{{ row.memberName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span [style.color]="row.status === 'Ready' ? '#2e7d32' :
+                                  row.status === 'Cancelled' || row.status === 'Expired' ? '#c62828' :
+                                  'rgba(0,0,0,0.7)'"
+                  style="font-size:13px;font-weight:500">
+              {{ row.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="placedAt">
+          <th mat-header-cell *matHeaderCellDef>Hold Date</th>
+          <td mat-cell *matCellDef="let row"
+              style="color:rgba(0,0,0,0.6);font-size:13px">
+            {{ row.placedAt | date:'mediumDate' }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+      </table>
+
+      <mat-paginator
+        [length]="totalCount()"
+        [pageSize]="20"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+
+    }
+
+  </mat-card>
+
+}

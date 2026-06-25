@@ -27,7 +27,7 @@ public sealed class AddBookByIsbnHandler
         if (existing is not null)
             return Result.Failure<Guid>("Book with this ISBN already exists.");
 
-        var metadata = await _isbn.LookupAsync(isbnVo.Value, ct);
+        var metadata = await _isbn.LookupAsync(isbnVo.Value, ct); // http call to open library api
         if (metadata is null)
             return Result.Failure<Guid>("ISBN not found in external catalog.");
 

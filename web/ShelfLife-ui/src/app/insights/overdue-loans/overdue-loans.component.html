@@ -1,6 +1,6 @@
 <div class="page-header">
   <h2>Overdue Loans</h2>
-  <p>Insights Module &mdash; GET /api/v1/insights/overdue-loans</p>
+  <p>Loans that have passed their 21-day due date. Sorted by most overdue first.</p>
 </div>
 
 @if (!auth.isLibrarian()) {
@@ -17,15 +17,29 @@
   <mat-card class="table-card">
 
     <div class="table-header">
-      <strong>Loans Past Due Date</strong>
-      <span style="float:right;font-size:13px;color:rgba(0,0,0,0.54)">
-        {{ totalCount() }} total
-      </span>
+      <span class="table-title">Loans Past Due Date</span>
+      @if (totalCount() > 0) {
+        <span class="table-count" style="background:rgba(198,40,40,0.1);color:#c62828">
+          {{ totalCount() }} overdue
+        </span>
+      }
+    </div>
+
+    <div style="padding: 0 16px 16px">
+      <mat-form-field appearance="outline" style="width: 100%; max-width: 420px">
+        <mat-label>Search by member name or book title</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput
+               [value]="searchValue()"
+               (input)="onSearchInput($any($event.target).value)"
+               placeholder="e.g. John Doe or Harry Potter">
+      </mat-form-field>
     </div>
 
     @if (loading()) {
       <div class="loading-row">
-        <mat-spinner diameter="36"></mat-spinner>
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Loading overdue loans&hellip;</span>
       </div>
     } @else if (error()) {
       <div class="error-banner" style="margin:16px">
@@ -33,9 +47,10 @@
         <span>{{ error() }}</span>
       </div>
     } @else if (data().length === 0) {
-      <div class="loading-row" style="color:#2e7d32">
-        <mat-icon style="margin-right:8px">check_circle</mat-icon>
-        No overdue loans — all books are returned on time.
+      <div class="empty-state">
+        <mat-icon class="empty-icon" style="color:#2e7d32;opacity:0.7">check_circle</mat-icon>
+        <p class="empty-title" style="color:#2e7d32">All loans are on time</p>
+        <p class="empty-hint">No overdue loans &mdash; every book has been returned by its due date.</p>
       </div>
     } @else {
 

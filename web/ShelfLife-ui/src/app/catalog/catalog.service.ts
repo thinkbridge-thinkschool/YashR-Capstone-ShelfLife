@@ -15,6 +15,11 @@ export class CatalogService {
     return this.http.post<AddBookResponse>(`${this.base}/books`, { isbn });
   }
 
+  /** POST /api/v1/catalog/books/manual — body: { title, author, publicationYear } — requires Librarian role */
+  addBookManually(title: string, author: string, publicationYear: number): Observable<AddBookResponse> {
+    return this.http.post<AddBookResponse>(`${this.base}/books/manual`, { title, author, publicationYear });
+  }
+
   /** POST /api/v1/catalog/books/{bookTitleId}/copies — body: { barcode } — requires Librarian role */
   addCopy(bookTitleId: string, barcode: string): Observable<AddCopyResponse> {
     return this.http.post<AddCopyResponse>(

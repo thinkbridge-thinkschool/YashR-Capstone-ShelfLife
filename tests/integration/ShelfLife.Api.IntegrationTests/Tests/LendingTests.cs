@@ -17,6 +17,7 @@ namespace ShelfLife.Api.IntegrationTests.Tests;
 /// Each test provisions its own member + book so tests are fully independent.
 /// </summary>
 [Collection("Integration")]
+[Trait("Category", "Integration")]
 public sealed class LendingTests(ShelfLifeApiFactory factory)
 {
     // Independent ISBN pool so lending tests never collide with catalog tests

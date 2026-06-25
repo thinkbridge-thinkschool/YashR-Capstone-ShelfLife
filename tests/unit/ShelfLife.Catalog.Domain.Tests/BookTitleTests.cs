@@ -106,4 +106,32 @@ public sealed class BookTitleTests
         var act = () => Isbn.Create("   ");
         act.Should().Throw<ArgumentException>();
     }
+
+    // ── Isbn.CreateManual ────────────────────────────────────────────────────
+
+    [Fact]
+    public void Isbn_CreateManual_ProducesValidIsbn13()
+    {
+        var isbn = Isbn.CreateManual(Guid.NewGuid());
+        // Must round-trip through the strict validator without throwing
+        var roundTripped = Isbn.Create(isbn.Value);
+        roundTripped.Value.Should().Be(isbn.Value);
+    }
+
+    [Fact]
+    public void Isbn_CreateManual_IsDeterministic()
+    {
+        var id = Guid.NewGuid();
+        var first  = Isbn.CreateManual(id);
+        var second = Isbn.CreateManual(id);
+        first.Value.Should().Be(second.Value);
+    }
+
+    [Fact]
+    public void Isbn_CreateManual_DifferentGuids_ProduceDifferentValues()
+    {
+        var a = Isbn.CreateManual(Guid.NewGuid());
+        var b = Isbn.CreateManual(Guid.NewGuid());
+        a.Value.Should().NotBe(b.Value);
+    }
 }

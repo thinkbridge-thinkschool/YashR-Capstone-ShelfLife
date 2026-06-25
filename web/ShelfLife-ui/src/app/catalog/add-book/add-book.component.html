@@ -11,13 +11,14 @@
   </div>
 }
 
+<!-- ISBN lookup form -->
 <mat-card class="form-card">
   <mat-card-header>
     <mat-card-title>
       <mat-icon style="vertical-align:middle;margin-right:8px;color:#3f51b5">library_add</mat-icon>
       New Book Title
     </mat-card-title>
-    <mat-card-subtitle>Catalog</mat-card-subtitle>
+    <mat-card-subtitle>Catalog &mdash; POST /api/v1/catalog/books</mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
@@ -33,30 +34,117 @@
         }
       </mat-form-field>
 
-      @if (error()) {
+      @if (error() && !showManualEntry()) {
         <div class="error-banner">
           <mat-icon>error_outline</mat-icon>
           <span>{{ error() }}</span>
+          @if (error()!.toLowerCase().includes('not found') || error()!.toLowerCase().includes('external catalog')) {
+            <button mat-button color="primary" type="button"
+                    style="margin-left:8px;font-size:13px"
+                    (click)="showManualEntry.set(true)">
+              Enter manually instead
+            </button>
+          }
         </div>
       }
 
       <div class="form-actions">
         <button mat-flat-button color="primary" type="submit"
                 [disabled]="loading() || !auth.isLibrarian()">
-          @if (loading()) {
+          @if (loading() && !showManualEntry()) {
             <div class="btn-spinner-wrap">
               <mat-spinner diameter="20"></mat-spinner>
               <span>Adding&hellip;</span>
             </div>
           } @else {
-            <mat-icon>add</mat-icon> Add Book
+            <mat-icon>search</mat-icon> Look up ISBN
           }
         </button>
+
+        @if (!showManualEntry()) {
+          <button mat-stroked-button type="button" style="margin-left:8px"
+                  [disabled]="!auth.isLibrarian()"
+                  (click)="showManualEntry.set(true)">
+            <mat-icon>edit</mat-icon> Enter manually
+          </button>
+        }
       </div>
 
     </form>
   </mat-card-content>
 </mat-card>
+
+<!-- Manual entry form -->
+@if (showManualEntry()) {
+  <mat-card class="form-card" style="margin-top:16px">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon style="vertical-align:middle;margin-right:8px;color:#e65100">edit</mat-icon>
+        Manual Entry
+      </mat-card-title>
+      <mat-card-subtitle>No ISBN? Enter book details directly.</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="manualForm" (ngSubmit)="onSubmitManual()">
+
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:16px">
+          <mat-label>Title</mat-label>
+          <mat-icon matPrefix>menu_book</mat-icon>
+          <input matInput formControlName="title" placeholder="e.g. The Great Gatsby">
+          @if (manualForm.controls.title.hasError('required') && manualForm.controls.title.touched) {
+            <mat-error>Title is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
+          <mat-label>Author</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="author" placeholder="e.g. F. Scott Fitzgerald">
+          @if (manualForm.controls.author.hasError('required') && manualForm.controls.author.touched) {
+            <mat-error>Author is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
+          <mat-label>Publication Year</mat-label>
+          <mat-icon matPrefix>calendar_today</mat-icon>
+          <input matInput type="number" formControlName="publicationYear" placeholder="e.g. 1925">
+          @if (manualForm.controls.publicationYear.invalid && manualForm.controls.publicationYear.touched) {
+            <mat-error>Enter a valid year</mat-error>
+          }
+        </mat-form-field>
+
+        @if (error() && showManualEntry()) {
+          <div class="error-banner">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ error() }}</span>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button mat-flat-button color="warn" type="submit"
+                  [disabled]="loading() || !auth.isLibrarian()">
+            @if (loading()) {
+              <div class="btn-spinner-wrap">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>Adding&hellip;</span>
+              </div>
+            } @else {
+              <mat-icon>add</mat-icon> Add Manually
+            }
+          </button>
+
+          <button mat-stroked-button type="button" style="margin-left:8px"
+                  (click)="showManualEntry.set(false); error.set(null)">
+            Cancel
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
 
 @if (result()) {
   <div class="result-panel">

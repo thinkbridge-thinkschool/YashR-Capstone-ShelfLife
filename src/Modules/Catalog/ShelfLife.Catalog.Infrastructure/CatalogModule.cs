@@ -17,6 +17,7 @@ public static class CatalogModule
 
         services.AddScoped<IBookTitleRepository, BookTitleRepository>();
         services.AddScoped<AddBookByIsbnHandler>();
+        services.AddScoped<AddBookManuallyHandler>();
         services.AddScoped<AddCopyHandler>();
         services.AddScoped<IBooksReadModel, BooksReadModel>();
         services.AddScoped<GetBooksHandler>();

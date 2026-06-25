@@ -9,6 +9,7 @@ using ShelfLife.Identity.Infrastructure;
 namespace ShelfLife.Api.IntegrationTests.Tests;
 
 [Collection("Integration")]
+[Trait("Category", "Integration")]
 public sealed class IdentityTests(ShelfLifeApiFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();

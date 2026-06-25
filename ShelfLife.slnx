@@ -43,6 +43,7 @@
     <Project Path="tests/arch/ShelfLife.Architecture.Tests/ShelfLife.Architecture.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/ShelfLife.Catalog.Application.Tests/ShelfLife.Catalog.Application.Tests.csproj" />
     <Project Path="tests/unit/ShelfLife.Catalog.Domain.Tests/ShelfLife.Catalog.Domain.Tests.csproj" />
     <Project Path="tests/unit/ShelfLife.Lending.Domain.Tests/ShelfLife.Lending.Domain.Tests.csproj" />
     <Project Path="tests/unit/ShelfLife.Notifications.Application.Tests/ShelfLife.Notifications.Application.Tests.csproj" />

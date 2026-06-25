@@ -80,6 +80,22 @@ public sealed class Isbn : ValueObject
         return digits[12] - '0' == check;
     }
 
+    // Generate a valid ISBN-13 deterministically from a GUID for manually-entered books.
+    public static Isbn CreateManual(Guid bookId)
+    {
+        var bytes = bookId.ToByteArray();
+        Span<char> digits = stackalloc char[13];
+        for (var i = 0; i < 12; i++)
+            digits[i] = (char)('0' + bytes[i] % 10);
+
+        var sum = 0;
+        for (var i = 0; i < 12; i++)
+            sum += (digits[i] - '0') * (i % 2 == 0 ? 1 : 3);
+        digits[12] = (char)('0' + (10 - sum % 10) % 10);
+
+        return new Isbn(new string(digits));
+    }
+
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;

@@ -1,7 +1,10 @@
 <mat-sidenav-container class="sidenav-container">
 
   <!-- ── Left sidebar ───────────────────────────────────────────────────── -->
-  <mat-sidenav mode="side" opened class="sidenav">
+  <mat-sidenav #sidenav
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+    class="sidenav">
 
     <!-- Brand -->
     <div class="sidenav-brand">
@@ -133,7 +136,14 @@
 
     <!-- Top toolbar -->
     <mat-toolbar color="primary" class="top-toolbar">
-      <span style="font-size:17px;font-weight:700;letter-spacing:-0.2px">ShelfLife</span>
+
+      @if (isHandset()) {
+        <button mat-icon-button (click)="toggleSidenav()" class="hamburger-btn" aria-label="Toggle menu">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+
+      <span class="toolbar-brand">ShelfLife</span>
       <span class="toolbar-spacer"></span>
 
       @if (auth.currentUser(); as user) {
@@ -142,7 +152,7 @@
           <span class="role-chip" [class.librarian-chip]="auth.isLibrarian()">
             {{ user.role }}
           </span>
-          <div class="user-avatar">{{ user.displayName[0] }}</div>
+          <div class="user-avatar">{{ user.displayName[0].toUpperCase() }}</div>
         </div>
       }
     </mat-toolbar>

@@ -1,6 +1,6 @@
 <div class="page-header">
   <h2>Borrow Book</h2>
-  <p>Issue a 21-day loan for an available book title. The borrower's account is charged automatically.</p>
+  <p>Issue a 14-day loan for an available book title.</p>
 </div>
 
 <mat-card class="form-card">
@@ -13,27 +13,59 @@
   </mat-card-header>
 
   <mat-card-content>
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <form (ngSubmit)="onSubmit()">
 
+      <!-- Member search -->
       <mat-form-field appearance="outline" class="full-width" style="margin-top:16px">
-        <mat-label>Member ID</mat-label>
+        <mat-label>Member</mat-label>
         <mat-icon matPrefix>person</mat-icon>
-        <input matInput formControlName="memberId"
-               placeholder="UUID of the member borrowing the book">
-        <mat-hint>Find the Member ID on the Members page</mat-hint>
-        @if (form.controls.memberId.hasError('required') && form.controls.memberId.touched) {
-          <mat-error>Member ID is required</mat-error>
+        <input matInput [formControl]="memberSearch"
+               placeholder="Type name or email to search…"
+               [matAutocomplete]="memberAuto">
+        @if (selectedMemberId()) {
+          <button matSuffix mat-icon-button type="button" (click)="onMemberClear()" matTooltip="Clear">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        <mat-autocomplete #memberAuto="matAutocomplete" (optionSelected)="onMemberSelected($event)">
+          @for (member of memberOptions(); track member.memberId) {
+            <mat-option [value]="member">
+              <span>{{ member.fullName }}</span>
+              <span style="font-size:12px;color:#888;margin-left:8px">{{ member.email }}</span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+        @if (selectedMemberId()) {
+          <mat-hint style="color:#2e7d32">Member selected</mat-hint>
+        } @else {
+          <mat-hint>Type at least 2 characters to search</mat-hint>
         }
       </mat-form-field>
 
+      <!-- Book title search -->
       <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
-        <mat-label>Book Title ID</mat-label>
+        <mat-label>Book Title</mat-label>
         <mat-icon matPrefix>bookmark</mat-icon>
-        <input matInput formControlName="bookTitleId"
-               placeholder="UUID of the book title to borrow">
-        <mat-hint>Paste the Book Title ID from the Add Book step</mat-hint>
-        @if (form.controls.bookTitleId.hasError('required') && form.controls.bookTitleId.touched) {
-          <mat-error>Book Title ID is required</mat-error>
+        <input matInput [formControl]="bookSearch"
+               placeholder="Type title or author to search…"
+               [matAutocomplete]="bookAuto">
+        @if (selectedBookTitleId()) {
+          <button matSuffix mat-icon-button type="button" (click)="onBookClear()" matTooltip="Clear">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        <mat-autocomplete #bookAuto="matAutocomplete" (optionSelected)="onBookSelected($event)">
+          @for (book of bookOptions(); track book.bookTitleId) {
+            <mat-option [value]="book">
+              <span>{{ book.title }}</span>
+              <span style="font-size:12px;color:#888;margin-left:8px">{{ book.author }}</span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+        @if (selectedBookTitleId()) {
+          <mat-hint style="color:#2e7d32">Book selected</mat-hint>
+        } @else {
+          <mat-hint>Type at least 2 characters to search</mat-hint>
         }
       </mat-form-field>
 
@@ -45,7 +77,8 @@
       }
 
       <div class="form-actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
+        <button mat-flat-button color="primary" type="submit"
+                [disabled]="loading() || !selectedMemberId() || !selectedBookTitleId()">
           @if (loading()) {
             <div class="btn-spinner-wrap">
               <mat-spinner diameter="20"></mat-spinner>

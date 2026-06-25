@@ -13,7 +13,7 @@ public sealed class BooksReadModel : IBooksReadModel
 
     public async Task<PagedList<BookSummaryDto>> GetBooksAsync(int page, int pageSize, string? search, CancellationToken ct = default)
     {
-        var query = _db.BookTitles.AsQueryable();
+        var query = _db.BookTitles.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(bt => bt.Title.Contains(search) || bt.Author.Contains(search));

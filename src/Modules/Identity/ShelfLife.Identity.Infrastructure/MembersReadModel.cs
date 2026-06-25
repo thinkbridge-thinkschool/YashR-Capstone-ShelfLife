@@ -12,7 +12,7 @@ public sealed class MembersReadModel : IMembersReadModel
 
     public async Task<PagedList<MemberSummaryDto>> GetMembersAsync(int page, int pageSize, string? search, CancellationToken ct = default)
     {
-        var query = _db.Members.AsQueryable();
+        var query = _db.Members.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(m => EF.Functions.Like(m.FullName, $"%{search}%") || EF.Functions.Like(m.Email, $"%{search}%"));
 

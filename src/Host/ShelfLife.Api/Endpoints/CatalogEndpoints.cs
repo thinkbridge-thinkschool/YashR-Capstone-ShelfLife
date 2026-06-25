@@ -19,6 +19,16 @@ public static class CatalogEndpoints
                                     : Results.BadRequest(result.Error);
         }).RequireAuthorization("Librarian");
 
+        group.MapPost("/books/manual", async (
+            [FromBody] AddBookManuallyCommand cmd,
+            AddBookManuallyHandler handler,
+            CancellationToken ct) =>
+        {
+            var result = await handler.HandleAsync(cmd, ct);
+            return result.IsSuccess ? Results.Created($"/api/catalog/books/{result.Value}", new { id = result.Value })
+                                    : Results.BadRequest(result.Error);
+        }).RequireAuthorization("Librarian");
+
         group.MapPost("/books/{bookTitleId:guid}/copies", async (
             Guid bookTitleId,
             [FromBody] AddCopyRequest req,

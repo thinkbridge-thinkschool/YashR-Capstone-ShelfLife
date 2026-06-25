@@ -10,6 +10,7 @@ using ShelfLife.Catalog.Infrastructure;
 namespace ShelfLife.Api.IntegrationTests.Tests;
 
 [Collection("Integration")]
+[Trait("Category", "Integration")]
 public sealed class CatalogTests(ShelfLifeApiFactory factory)
 {
     private readonly HttpClient _client = factory.CreateClient();
@@ -86,6 +87,75 @@ public sealed class CatalogTests(ShelfLifeApiFactory factory)
         var isbn = UniqueIsbn();
         await client.PostAsJsonAsync("/api/v1/catalog/books", new { Isbn = isbn });
         var response = await client.PostAsJsonAsync("/api/v1/catalog/books", new { Isbn = isbn });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    // ── Add Book Manually ─────────────────────────────────────────────────────
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AddBookManually_ValidInput_LibrarianRole_Returns201AndPersistsTitle()
+    {
+        var librarianId = Guid.NewGuid();
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestTokenHelper.LibrarianToken(librarianId));
+
+        var response = await client.PostAsJsonAsync("/api/v1/catalog/books/manual", new
+        {
+            Title           = "The Pragmatic Programmer",
+            Author          = "David Thomas",
+            PublicationYear = 1999,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await response.Content.ReadFromJsonAsync<IdResponse>();
+        body!.Id.Should().NotBeEmpty();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db    = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        var title = await db.BookTitles.FirstOrDefaultAsync(b => b.Id == body.Id);
+        title.Should().NotBeNull();
+        title!.Title.Should().Be("The Pragmatic Programmer");
+        title.Author.Should().Be("David Thomas");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AddBookManually_WithoutToken_Returns401()
+    {
+        var response = await factory.CreateClient()
+            .PostAsJsonAsync("/api/v1/catalog/books/manual",
+                new { Title = "X", Author = "Y", PublicationYear = 2000 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AddBookManually_MemberRole_Returns403()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestTokenHelper.MemberToken(Guid.NewGuid()));
+
+        var response = await client.PostAsJsonAsync("/api/v1/catalog/books/manual",
+            new { Title = "X", Author = "Y", PublicationYear = 2000 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AddBookManually_EmptyTitle_Returns400()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestTokenHelper.LibrarianToken(Guid.NewGuid()));
+
+        var response = await client.PostAsJsonAsync("/api/v1/catalog/books/manual",
+            new { Title = "", Author = "Author", PublicationYear = 2000 });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

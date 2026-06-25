@@ -14,7 +14,7 @@ html, body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #1a237e;
+  background: #7e86e0;
   background-image:
     radial-gradient(circle at 15% 50%, rgba(92,107,192,0.35) 0%, transparent 50%),
     radial-gradient(circle at 85% 20%, rgba(63,81,181,0.4)  0%, transparent 45%);
@@ -668,4 +668,117 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+
+/* Hamburger button: reset icon button default margin */
+.hamburger-btn {
+  margin-right: 4px;
+  color: #fff !important;
+}
+
+.toolbar-brand {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+@media (max-width: 768px) {
+  /* Content area */
+  .content-area {
+    padding: 16px;
+  }
+
+  /* Forms */
+  .form-card {
+    max-width: 100%;
+    border-radius: 6px !important;
+  }
+
+  .result-panel {
+    max-width: 100%;
+  }
+
+  /* Toolbar — hide email and role chip to save space */
+  .user-email {
+    display: none;
+  }
+
+  .role-chip {
+    display: none;
+  }
+
+  /* Page headers */
+  .page-header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+
+    h2 { font-size: 18px; }
+  }
+
+  /* Dashboard welcome */
+  .dashboard-welcome {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .welcome-text h2 { font-size: 19px; }
+  }
+
+  /* Metric grid: single column on mobile */
+  .metric-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Quick actions: stack vertically */
+  .quick-actions .action-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Tables: horizontal scroll */
+  .table-card {
+    overflow-x: auto;
+
+    mat-table,
+    table {
+      min-width: 560px;
+    }
+
+    .table-header {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  /* Auth card: tighter padding on small screens */
+  .auth-card {
+    mat-card-content { padding: 0 16px 8px !important; }
+    mat-card-actions { padding: 8px 16px 24px !important; }
+
+    .auth-header {
+      padding: 24px 0 12px;
+    }
+  }
+
+  /* Form actions: allow wrapping */
+  .form-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small: tighten further */
+  .content-area {
+    padding: 12px;
+  }
+
+  .metric-card mat-card-content {
+    padding: 16px !important;
+  }
+
+  .metric-card .metric-value {
+    font-size: 28px;
+  }
 }

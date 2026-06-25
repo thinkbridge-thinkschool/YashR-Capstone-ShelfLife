@@ -7,6 +7,7 @@ using ShelfLife.Api.IntegrationTests.Fixtures;
 namespace ShelfLife.Api.IntegrationTests.Tests;
 
 [Collection("Integration")]
+[Trait("Category", "Integration")]
 public sealed class HoldsTests(ShelfLifeApiFactory factory)
 {
     // ── Authorization ─────────────────────────────────────────────────────────

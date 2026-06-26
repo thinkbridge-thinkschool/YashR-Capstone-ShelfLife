@@ -104,8 +104,8 @@ public sealed class CatalogTests(ShelfLifeApiFactory factory)
 
         var response = await client.PostAsJsonAsync("/api/v1/catalog/books/manual", new
         {
-            Title           = "The Pragmatic Programmer",
-            Author          = "David Thomas",
+            Title = "The Pragmatic Programmer",
+            Author = "David Thomas",
             PublicationYear = 1999,
         });
 
@@ -114,7 +114,7 @@ public sealed class CatalogTests(ShelfLifeApiFactory factory)
         body!.Id.Should().NotBeEmpty();
 
         await using var scope = factory.Services.CreateAsyncScope();
-        var db    = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
         var title = await db.BookTitles.FirstOrDefaultAsync(b => b.Id == body.Id);
         title.Should().NotBeNull();
         title!.Title.Should().Be("The Pragmatic Programmer");

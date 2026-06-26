@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Identity.Application;
+namespace ShelfLife.Identity.Application;
 
 public interface IPasswordHasher
 {

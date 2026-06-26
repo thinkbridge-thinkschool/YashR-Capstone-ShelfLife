@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.SharedKernel;
+namespace ShelfLife.SharedKernel;
 
 public abstract class ValueObject
 {

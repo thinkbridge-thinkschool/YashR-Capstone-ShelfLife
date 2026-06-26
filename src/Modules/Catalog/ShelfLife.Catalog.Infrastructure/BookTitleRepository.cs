@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Catalog.Domain;
 
 namespace ShelfLife.Catalog.Infrastructure;

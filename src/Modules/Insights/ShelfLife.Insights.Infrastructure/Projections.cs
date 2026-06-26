@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Insights.Infrastructure;
+namespace ShelfLife.Insights.Infrastructure;
 
 public sealed class ProcessedProjectionEvent
 {

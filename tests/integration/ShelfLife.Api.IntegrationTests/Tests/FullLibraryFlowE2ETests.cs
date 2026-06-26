@@ -25,7 +25,7 @@ public sealed class FullLibraryFlowE2ETests(ShelfLifeApiFactory factory)
         var publicClient = factory.CreateClient();
         var registerResp = await publicClient.PostAsJsonAsync("/api/v1/identity/register", new
         {
-            Email    = $"e2e-{Guid.NewGuid()}@library.test",
+            Email = $"e2e-{Guid.NewGuid()}@library.test",
             FullName = "E2E Reader",
             Password = "E2ePass123!",
         });
@@ -40,8 +40,8 @@ public sealed class FullLibraryFlowE2ETests(ShelfLifeApiFactory factory)
 
         var addBookResp = await libClient.PostAsJsonAsync("/api/v1/catalog/books/manual", new
         {
-            Title           = "Domain-Driven Design",
-            Author          = "Eric Evans",
+            Title = "Domain-Driven Design",
+            Author = "Eric Evans",
             PublicationYear = 2003,
         });
         addBookResp.StatusCode.Should().Be(HttpStatusCode.Created, "manual book add must succeed");
@@ -88,7 +88,7 @@ public sealed class FullLibraryFlowE2ETests(ShelfLifeApiFactory factory)
 
         // ── 8. Loan status in DB must be Returned ────────────────────────────
         await using var scope = factory.Services.CreateAsyncScope();
-        var db   = scope.ServiceProvider.GetRequiredService<LendingDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<LendingDbContext>();
         var loan = await db.Loans.FirstOrDefaultAsync(l => l.Id == loanId);
         loan.Should().NotBeNull();
         loan!.Status.Should().Be(LoanStatus.Returned,

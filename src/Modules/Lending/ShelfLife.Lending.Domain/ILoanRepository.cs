@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Lending.Domain;
+namespace ShelfLife.Lending.Domain;
 
 public interface ILoanRepository
 {

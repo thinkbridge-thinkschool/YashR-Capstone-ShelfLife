@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using NSubstitute;
 using Xunit;
 using ShelfLife.Lending.Contracts;

@@ -1,0 +1,205 @@
+Summary
+  Generated on: 6/25/2026 - 10:30:25 PM
+  Coverage date: 6/25/2026 - 10:27:09 PM - 6/25/2026 - 10:30:00 PM
+  Parser: MultiReport (12x Cobertura)
+  Assemblies: 22
+  Classes: 141
+  Files: 89
+  Line coverage: 61.3%
+  Covered lines: 2397
+  Uncovered lines: 1511
+  Coverable lines: 3908
+  Total lines: 5736
+  Branch coverage: 57% (129 of 226)
+  Covered branches: 129
+  Total branches: 226
+  Method coverage: 57.1% (290 of 507)
+  Full method coverage: 54% (274 of 507)
+  Covered methods: 290
+  Fully covered methods: 274
+  Total methods: 507
+
+ShelfLife.Api                                                                                       79.5%
+  <Program>F482D38F02A97159B3334E62F980A757516B121F40FF73400654AD75937EC5028__CompositeUnitOfWork    100%
+  Program                                                                                             88%
+  ShelfLife.Api.DesignTime.CatalogDbContextFactory                                                     0%
+  ShelfLife.Api.DesignTime.DesignTimeConfig                                                            0%
+  ShelfLife.Api.DesignTime.IdentityDbContextFactory                                                    0%
+  ShelfLife.Api.DesignTime.InsightsDbContextFactory                                                    0%
+  ShelfLife.Api.DesignTime.LendingDbContextFactory                                                     0%
+  ShelfLife.Api.DesignTime.NotificationsDbContextFactory                                               0%
+  ShelfLife.Api.Endpoints.AddCopyRequest                                                             100%
+  ShelfLife.Api.Endpoints.BorrowBookRequest                                                          100%
+  ShelfLife.Api.Endpoints.CatalogEndpoints                                                           100%
+  ShelfLife.Api.Endpoints.IdentityEndpoints                                                         97.5%
+  ShelfLife.Api.Endpoints.InsightsEndpoints                                                           60%
+  ShelfLife.Api.Endpoints.LendingEndpoints                                                          83.5%
+  ShelfLife.Api.Endpoints.PlaceHoldRequest                                                             0%
+
+ShelfLife.Catalog.Application                                                                       73.8%
+  ShelfLife.Catalog.Application.AddBookByIsbnCommand                                                 100%
+  ShelfLife.Catalog.Application.AddBookByIsbnHandler                                                94.7%
+  ShelfLife.Catalog.Application.AddBookManuallyCommand                                               100%
+  ShelfLife.Catalog.Application.AddBookManuallyHandler                                                95%
+  ShelfLife.Catalog.Application.AddCopyCommand                                                       100%
+  ShelfLife.Catalog.Application.AddCopyHandler                                                      92.8%
+  ShelfLife.Catalog.Application.BookSummaryDto                                                       100%
+  ShelfLife.Catalog.Application.GetBooksHandler                                                      100%
+  ShelfLife.Catalog.Application.GetBooksQuery                                                        100%
+  ShelfLife.Catalog.Application.IsbnEnrichmentService                                                  0%
+  ShelfLife.Catalog.Application.IsbnMetadata                                                         100%
+
+ShelfLife.Catalog.Contracts                                                                            0%
+  ShelfLife.Catalog.Contracts.CatalogItemAddedEvent                                                    0%
+
+ShelfLife.Catalog.Domain                                                                            86.4%
+  ShelfLife.Catalog.Domain.BookTitle                                                                84.9%
+  ShelfLife.Catalog.Domain.BookTitleCreatedEvent                                                    66.6%
+  ShelfLife.Catalog.Domain.Copy                                                                       80%
+  ShelfLife.Catalog.Domain.CopyAddedEvent                                                           66.6%
+  ShelfLife.Catalog.Domain.CopyBarcode                                                              90.9%
+  ShelfLife.Catalog.Domain.CopyMarkedLostEvent                                                         0%
+  ShelfLife.Catalog.Domain.Isbn                                                                     94.2%
+
+ShelfLife.Catalog.Infrastructure                                                                    58.2%
+  ShelfLife.Catalog.Infrastructure.BooksReadModel                                                    100%
+  ShelfLife.Catalog.Infrastructure.BookTitleRepository                                               100%
+  ShelfLife.Catalog.Infrastructure.CatalogDbContext                                                  100%
+  ShelfLife.Catalog.Infrastructure.CatalogModule                                                     100%
+  ShelfLife.Catalog.Infrastructure.Migrations.CatalogDbContextModelSnapshot                            0%
+  ShelfLife.Catalog.Infrastructure.Migrations.InitialCreate                                         96.5%
+
+ShelfLife.Identity.Application                                                                      97.7%
+  ShelfLife.Identity.Application.GetMembersHandler                                                   100%
+  ShelfLife.Identity.Application.GetMembersQuery                                                     100%
+  ShelfLife.Identity.Application.LoginCommand                                                        100%
+  ShelfLife.Identity.Application.LoginHandler                                                       93.3%
+  ShelfLife.Identity.Application.LoginResult                                                         100%
+  ShelfLife.Identity.Application.MemberSummaryDto                                                    100%
+  ShelfLife.Identity.Application.RegisterMemberCommand                                               100%
+  ShelfLife.Identity.Application.RegisterMemberHandler                                               100%
+
+ShelfLife.Identity.Contracts                                                                           0%
+  ShelfLife.Identity.Contracts.MemberRegisteredEvent                                                   0%
+
+ShelfLife.Identity.Domain                                                                           78.5%
+  ShelfLife.Identity.Domain.Member                                                                  90.9%
+  ShelfLife.Identity.Domain.MemberRegisteredDomainEvent                                             33.3%
+
+ShelfLife.Identity.Infrastructure                                                                     72%
+  ShelfLife.Identity.Infrastructure.IdentityDbContext                                                100%
+  ShelfLife.Identity.Infrastructure.IdentityModule                                                   100%
+  ShelfLife.Identity.Infrastructure.JwtService                                                       100%
+  ShelfLife.Identity.Infrastructure.MemberRepository                                                  75%
+  ShelfLife.Identity.Infrastructure.MembersReadModel                                                 100%
+  ShelfLife.Identity.Infrastructure.Migrations.AddDeadLetterAndRetrySupport                         95.6%
+  ShelfLife.Identity.Infrastructure.Migrations.IdentityDbContextModelSnapshot                          0%
+  ShelfLife.Identity.Infrastructure.Migrations.InitialCreate                                        94.6%
+  ShelfLife.Identity.Infrastructure.PasswordHasher                                                   100%
+
+ShelfLife.Infrastructure.Messaging                                                                     0%
+  ShelfLife.Infrastructure.Messaging.ServiceBusPublisher                                               0%
+
+ShelfLife.Infrastructure.Outbox                                                                     98.6%
+  ShelfLife.Infrastructure.Outbox.DeadLetterMessage                                                  100%
+  ShelfLife.Infrastructure.Outbox.OutboxMessage                                                      100%
+  ShelfLife.Infrastructure.Outbox.OutboxRelayProcessor                                               100%
+  ShelfLife.Infrastructure.Outbox.OutboxRelayWorker                                                 95.2%
+
+ShelfLife.Infrastructure.Persistence                                                                 100%
+  ShelfLife.Infrastructure.Persistence.EfOutboxStore                                                 100%
+  ShelfLife.Infrastructure.Persistence.ShelfLifeDbContext                                            100%
+
+ShelfLife.Insights.Application                                                                         0%
+  ShelfLife.Insights.Application.GetMemberActivityQuery                                                0%
+  ShelfLife.Insights.Application.GetOverdueLoansQuery                                                  0%
+  ShelfLife.Insights.Application.GetPopularTitlesQuery                                                 0%
+  ShelfLife.Insights.Application.InsightsQueryHandler                                                  0%
+
+ShelfLife.Insights.Contracts                                                                           0%
+  ShelfLife.Insights.Contracts.MemberActivityDto                                                       0%
+  ShelfLife.Insights.Contracts.OverdueLoanDto                                                          0%
+  ShelfLife.Insights.Contracts.PopularTitleDto                                                         0%
+
+ShelfLife.Insights.Infrastructure                                                                     46%
+  ShelfLife.Insights.Infrastructure.InsightsDbContext                                               87.5%
+  ShelfLife.Insights.Infrastructure.InsightsModule                                                   100%
+  ShelfLife.Insights.Infrastructure.InsightsReadModel                                                  0%
+  ShelfLife.Insights.Infrastructure.MemberActivityProjection                                           0%
+  ShelfLife.Insights.Infrastructure.Migrations.InitialCreate                                        93.6%
+  ShelfLife.Insights.Infrastructure.Migrations.InsightsDbContextModelSnapshot                          0%
+  ShelfLife.Insights.Infrastructure.OverdueLoanProjection                                              0%
+  ShelfLife.Insights.Infrastructure.PopularTitleProjection                                             0%
+
+ShelfLife.Lending.Application                                                                         50%
+  ShelfLife.Lending.Application.BorrowBookCommand                                                    100%
+  ShelfLife.Lending.Application.BorrowBookHandler                                                    100%
+  ShelfLife.Lending.Application.BorrowBookResult                                                     100%
+  ShelfLife.Lending.Application.GetHoldsHandler                                                      100%
+  ShelfLife.Lending.Application.GetHoldsQuery                                                        100%
+  ShelfLife.Lending.Application.GetLoansHandler                                                      100%
+  ShelfLife.Lending.Application.GetLoansQuery                                                        100%
+  ShelfLife.Lending.Application.GetMyHoldsHandler                                                      0%
+  ShelfLife.Lending.Application.GetMyHoldsQuery                                                        0%
+  ShelfLife.Lending.Application.GetMyLoansHandler                                                    100%
+  ShelfLife.Lending.Application.GetMyLoansQuery                                                      100%
+  ShelfLife.Lending.Application.HoldDto                                                                0%
+  ShelfLife.Lending.Application.LoanSummaryDto                                                         0%
+  ShelfLife.Lending.Application.MyHoldDto                                                              0%
+  ShelfLife.Lending.Application.MyLoanDto                                                            100%
+  ShelfLife.Lending.Application.PlaceHoldCommand                                                       0%
+  ShelfLife.Lending.Application.PlaceHoldHandler                                                       0%
+  ShelfLife.Lending.Application.ReturnBookCommand                                                    100%
+  ShelfLife.Lending.Application.ReturnBookHandler                                                    100%
+
+ShelfLife.Lending.Contracts                                                                         22.2%
+  ShelfLife.Lending.Contracts.BookBorrowedEvent                                                      100%
+  ShelfLife.Lending.Contracts.BookReturnedEvent                                                        0%
+  ShelfLife.Lending.Contracts.HoldPlacedEvent                                                          0%
+  ShelfLife.Lending.Contracts.HoldReadyEvent                                                           0%
+  ShelfLife.Lending.Contracts.LoanOverdueEvent                                                         0%
+
+ShelfLife.Lending.Domain                                                                            85.1%
+  ShelfLife.Lending.Domain.Hold                                                                     86.6%
+  ShelfLife.Lending.Domain.HoldPlacedDomainEvent                                                    66.6%
+  ShelfLife.Lending.Domain.HoldReadyDomainEvent                                                     66.6%
+  ShelfLife.Lending.Domain.Loan                                                                     94.1%
+  ShelfLife.Lending.Domain.LoanCreatedDomainEvent                                                   66.6%
+  ShelfLife.Lending.Domain.LoanPeriod                                                               68.7%
+  ShelfLife.Lending.Domain.LoanReturnedDomainEvent                                                  66.6%
+
+ShelfLife.Lending.Infrastructure                                                                    47.8%
+  ShelfLife.Lending.Infrastructure.HoldsReadModel                                                   38.2%
+  ShelfLife.Lending.Infrastructure.LendingDbContext                                                  100%
+  ShelfLife.Lending.Infrastructure.LendingModule                                                     100%
+  ShelfLife.Lending.Infrastructure.LoanRepository                                                   27.2%
+  ShelfLife.Lending.Infrastructure.LoansReadModel                                                   38.2%
+  ShelfLife.Lending.Infrastructure.Migrations.InitialCreate                                           96%
+  ShelfLife.Lending.Infrastructure.Migrations.LendingDbContextModelSnapshot                            0%
+  ShelfLife.Lending.Infrastructure.MyHoldsReadModel                                                    0%
+  ShelfLife.Lending.Infrastructure.MyLoansReadModel                                                 69.1%
+
+ShelfLife.Notifications.Application                                                                 33.3%
+  ShelfLife.Notifications.Application.BookBorrowedNotificationHandler                                100%
+  ShelfLife.Notifications.Application.HoldReadyNotificationHandler                                     0%
+  ShelfLife.Notifications.Application.LoanOverdueNotificationHandler                                   0%
+  ShelfLife.Notifications.Application.NotificationRequest                                           33.3%
+
+ShelfLife.Notifications.Infrastructure                                                              44.5%
+  ShelfLife.Notifications.Infrastructure.DeliveryLog                                                   0%
+  ShelfLife.Notifications.Infrastructure.EfIdempotencyStore                                            0%
+  ShelfLife.Notifications.Infrastructure.IdempotencyKey                                                0%
+  ShelfLife.Notifications.Infrastructure.MemberLookup                                                  0%
+  ShelfLife.Notifications.Infrastructure.Migrations.InitialCreate                                   93.8%
+  ShelfLife.Notifications.Infrastructure.Migrations.NotificationsDbContextModelSnapshot                0%
+  ShelfLife.Notifications.Infrastructure.NotificationsDbContext                                     89.4%
+  ShelfLife.Notifications.Infrastructure.NotificationsModule                                         100%
+  ShelfLife.Notifications.Infrastructure.SmtpNotificationSender                                        0%
+
+ShelfLife.SharedKernel                                                                              72.7%
+  ShelfLife.SharedKernel.AggregateRoot<T>                                                           66.6%
+  ShelfLife.SharedKernel.Entity<T>                                                                  16.6%
+  ShelfLife.SharedKernel.PagedList<T>                                                                100%
+  ShelfLife.SharedKernel.Result                                                                     91.6%
+  ShelfLife.SharedKernel.Result<T>                                                                  91.6%
+  ShelfLife.SharedKernel.ValueObject                                                                  60%

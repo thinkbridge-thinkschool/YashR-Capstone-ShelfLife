@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.SharedKernel;
+namespace ShelfLife.SharedKernel;
 
 public interface IMessageConsumer<T> where T : class
 {

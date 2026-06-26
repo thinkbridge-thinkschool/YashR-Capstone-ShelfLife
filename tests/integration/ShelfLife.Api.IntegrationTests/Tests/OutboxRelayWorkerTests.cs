@@ -20,7 +20,7 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
     private async Task<(IOutboxStore store, IdentityDbContext db)> CreateScopeAsync()
     {
         var scope = factory.Services.CreateAsyncScope();
-        var db    = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         var store = new EfOutboxStore(db);
         return (store, db);
     }
@@ -30,8 +30,8 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
 
     private static OutboxMessage NewMessage() => new()
     {
-        Type      = "test.event",
-        Payload   = """{"test":true}""",
+        Type = "test.event",
+        Payload = """{"test":true}""",
         TopicName = "test-topic",
     };
 
@@ -42,8 +42,8 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
     {
         // Arrange
         var (store, db) = await CreateScopeAsync();
-        var publisher   = new CapturingMessagePublisher();
-        var processor   = MakeProcessor(store, publisher);
+        var publisher = new CapturingMessagePublisher();
+        var processor = MakeProcessor(store, publisher);
 
         var message = NewMessage();
         await store.AddAsync(message);
@@ -66,7 +66,7 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
     {
         // Arrange
         var (store, db) = await CreateScopeAsync();
-        var processor   = MakeProcessor(store, new FailingMessagePublisher());
+        var processor = MakeProcessor(store, new FailingMessagePublisher());
 
         var message = NewMessage();
         await store.AddAsync(message);
@@ -89,14 +89,14 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
     {
         // Arrange — seed a message already at the retry threshold
         var (store, db) = await CreateScopeAsync();
-        var processor   = MakeProcessor(store, new FailingMessagePublisher());
+        var processor = MakeProcessor(store, new FailingMessagePublisher());
 
         // RetryCount = MaxRetries - 1 means the next failure will dead-letter it
         var message = new OutboxMessage
         {
-            Type       = "test.event",
-            Payload    = """{"test":true}""",
-            TopicName  = "test-topic",
+            Type = "test.event",
+            Payload = """{"test":true}""",
+            TopicName = "test-topic",
             RetryCount = OutboxRelayProcessor.MaxRetries - 1,
         };
         await store.AddAsync(message);
@@ -123,16 +123,16 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
     {
         // Arrange — persist a message whose retry is due in the future
         var (store, db) = await CreateScopeAsync();
-        var publisher   = new CapturingMessagePublisher();
-        var processor   = MakeProcessor(store, publisher);
+        var publisher = new CapturingMessagePublisher();
+        var processor = MakeProcessor(store, publisher);
 
         var futureMessage = new OutboxMessage
         {
-            Type         = "test.event",
-            Payload      = """{"test":true}""",
-            TopicName    = "test-topic",
-            RetryCount   = 1,
-            NextRetryAt  = DateTimeOffset.UtcNow.AddMinutes(10),
+            Type = "test.event",
+            Payload = """{"test":true}""",
+            TopicName = "test-topic",
+            RetryCount = 1,
+            NextRetryAt = DateTimeOffset.UtcNow.AddMinutes(10),
         };
         db.OutboxMessages.Add(futureMessage);
         await db.SaveChangesAsync();
@@ -152,16 +152,16 @@ public sealed class OutboxRelayWorkerTests(ShelfLifeApiFactory factory)
 
         // Arrange
         await using var scope = factory.Services.CreateAsyncScope();
-        var sp        = scope.ServiceProvider;
-        var db        = sp.GetRequiredService<IdentityDbContext>();
-        var store     = new EfOutboxStore(db);
+        var sp = scope.ServiceProvider;
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var store = new EfOutboxStore(db);
         var publisher = new CapturingMessagePublisher();
         var processor = MakeProcessor(store, publisher);
 
         var message = new OutboxMessage
         {
-            Type      = "catalog.book_added",
-            Payload   = """{"isbn":"9780201633610","title":"The Pragmatic Programmer"}""",
+            Type = "catalog.book_added",
+            Payload = """{"isbn":"9780201633610","title":"The Pragmatic Programmer"}""",
             TopicName = "catalog.book-added",
         };
         await store.AddAsync(message);

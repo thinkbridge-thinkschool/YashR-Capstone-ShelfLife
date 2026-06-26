@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.SharedKernel;
 

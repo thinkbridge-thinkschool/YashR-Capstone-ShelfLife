@@ -78,10 +78,10 @@ if (builder.Environment.IsDevelopment())
             opts.MapInboundClaims = false;
             opts.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer   = true,
-                ValidIssuer      = config["Jwt:Issuer"],
+                ValidateIssuer = true,
+                ValidIssuer = config["Jwt:Issuer"],
                 ValidateAudience = true,
-                ValidAudience    = config["Jwt:Audience"],
+                ValidAudience = config["Jwt:Audience"],
                 ValidateLifetime = true,
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(config["Jwt:Secret"] ?? "")),
@@ -109,18 +109,18 @@ builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("identity", cfg =>
     {
-        cfg.Window              = TimeSpan.FromMinutes(1);
-        cfg.PermitLimit         = builder.Configuration.GetValue("RateLimiter:Identity:PermitLimit", 10);
+        cfg.Window = TimeSpan.FromMinutes(1);
+        cfg.PermitLimit = builder.Configuration.GetValue("RateLimiter:Identity:PermitLimit", 10);
         cfg.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        cfg.QueueLimit          = 0;  // reject immediately — no queue
+        cfg.QueueLimit = 0;  // reject immediately — no queue
     });
 
     options.AddFixedWindowLimiter("api", cfg =>
     {
-        cfg.Window              = TimeSpan.FromMinutes(1);
-        cfg.PermitLimit         = builder.Configuration.GetValue("RateLimiter:Api:PermitLimit", 60);
+        cfg.Window = TimeSpan.FromMinutes(1);
+        cfg.PermitLimit = builder.Configuration.GetValue("RateLimiter:Api:PermitLimit", 60);
         cfg.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        cfg.QueueLimit          = 0;
+        cfg.QueueLimit = 0;
     });
 
     // Return 429 with Retry-After header instead of the default 503
@@ -185,19 +185,19 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title       = "ShelfLife API",
-        Version     = "v1",
+        Title = "ShelfLife API",
+        Version = "v1",
         Description = "Library management system — borrowing, holds, catalog, insights."
     });
 
     var bearerScheme = new OpenApiSecurityScheme
     {
-        Name         = "Authorization",
-        Type         = SecuritySchemeType.Http,
-        Scheme       = "Bearer",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
         BearerFormat = "JWT",
-        In           = ParameterLocation.Header,
-        Description  = "Paste your JWT (without the 'Bearer ' prefix). Obtain one from POST /api/v1/identity/login."
+        In = ParameterLocation.Header,
+        Description = "Paste your JWT (without the 'Bearer ' prefix). Obtain one from POST /api/v1/identity/login."
     };
     options.AddSecurityDefinition("Bearer", bearerScheme);
 
@@ -227,10 +227,10 @@ var app = builder.Build();
 //   • Referrer-Policy Header Not Set
 app.Use(async (ctx, next) =>
 {
-    ctx.Response.Headers.Append("X-Content-Type-Options",  "nosniff");
-    ctx.Response.Headers.Append("X-Frame-Options",         "DENY");
-    ctx.Response.Headers.Append("Referrer-Policy",         "strict-origin-when-cross-origin");
-    ctx.Response.Headers.Append("Permissions-Policy",      "geolocation=(), camera=(), microphone=()");
+    ctx.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    ctx.Response.Headers.Append("X-Frame-Options", "DENY");
+    ctx.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    ctx.Response.Headers.Append("Permissions-Policy", "geolocation=(), camera=(), microphone=()");
     // Swagger UI needs inline scripts/styles; all other paths get the strict API policy.
     var csp = ctx.Request.Path.StartsWithSegments("/swagger")
         ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
@@ -258,8 +258,8 @@ else
 // IdentityDbContext runs first because it owns the shared OutboxMessages table.
 {
     await using var scope = app.Services.CreateAsyncScope();
-    var sp   = scope.ServiceProvider;
-    var log  = sp.GetRequiredService<ILogger<Program>>();
+    var sp = scope.ServiceProvider;
+    var log = sp.GetRequiredService<ILogger<Program>>();
     var ctxs = new DbContext[]
     {
         sp.GetRequiredService<IdentityDbContext>(),
@@ -356,15 +356,15 @@ static bool IsTransient(Microsoft.Data.SqlClient.SqlException ex) =>
 static async Task SeedLibrarianAsync(IServiceProvider services)
 {
     await using var scope = services.CreateAsyncScope();
-    var sp      = scope.ServiceProvider;
+    var sp = scope.ServiceProvider;
     var members = sp.GetRequiredService<IMemberRepository>();
-    var hasher  = sp.GetRequiredService<IPasswordHasher>();
-    var uow     = sp.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
+    var hasher = sp.GetRequiredService<IPasswordHasher>();
+    var uow = sp.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
 
     const string email = "librarian@shelflife.dev";
     if (await members.FindByEmailAsync(email) is not null) return;
 
-    var hash      = hasher.Hash("Librarian@123");
+    var hash = hasher.Hash("Librarian@123");
     var librarian = Member.Register(Guid.NewGuid(), email, "ShelfLife Librarian", hash);
     librarian.AssignRole(MemberRole.Librarian);
     await members.AddAsync(librarian);

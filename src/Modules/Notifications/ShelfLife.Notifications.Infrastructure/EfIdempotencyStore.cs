@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Notifications.Application;
 
 namespace ShelfLife.Notifications.Infrastructure;

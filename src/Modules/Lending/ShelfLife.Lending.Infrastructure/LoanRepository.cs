@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Lending.Domain;
 
 namespace ShelfLife.Lending.Infrastructure;

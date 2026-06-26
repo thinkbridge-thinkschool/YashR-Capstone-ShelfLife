@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Identity.Domain;
 using ShelfLife.Infrastructure.Persistence;
 

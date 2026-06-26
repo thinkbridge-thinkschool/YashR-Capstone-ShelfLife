@@ -1,4 +1,4 @@
-﻿using ShelfLife.Catalog.Domain;
+using ShelfLife.Catalog.Domain;
 using ShelfLife.SharedKernel;
 
 namespace ShelfLife.Catalog.Application;

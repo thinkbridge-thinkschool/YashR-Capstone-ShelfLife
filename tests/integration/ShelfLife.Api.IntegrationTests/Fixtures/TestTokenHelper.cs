@@ -11,14 +11,14 @@ namespace ShelfLife.Api.IntegrationTests.Fixtures;
 /// </summary>
 public static class TestTokenHelper
 {
-    public const string Issuer   = "shelflife-test-issuer";
+    public const string Issuer = "shelflife-test-issuer";
     public const string Audience = "shelflife-test-audience";
     // Must be ≥ 32 chars for HS256
-    public const string Secret   = "shelflife-test-secret-key-32-chars!";
+    public const string Secret = "shelflife-test-secret-key-32-chars!";
 
     public static string GenerateToken(Guid memberId, string role = "Member")
     {
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         // Use the same claim names as JwtService: sub + role (raw short name)
@@ -29,15 +29,15 @@ public static class TestTokenHelper
         };
 
         var token = new JwtSecurityToken(
-            issuer:            Issuer,
-            audience:          Audience,
-            claims:            claims,
-            expires:           DateTime.UtcNow.AddHours(1),
+            issuer: Issuer,
+            audience: Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public static string MemberToken(Guid memberId)   => GenerateToken(memberId, "Member");
+    public static string MemberToken(Guid memberId) => GenerateToken(memberId, "Member");
     public static string LibrarianToken(Guid memberId) => GenerateToken(memberId, "Librarian");
 }

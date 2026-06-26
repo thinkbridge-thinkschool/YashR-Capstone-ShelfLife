@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Catalog.Domain;
+namespace ShelfLife.Catalog.Domain;
 
 public interface IBookTitleRepository
 {

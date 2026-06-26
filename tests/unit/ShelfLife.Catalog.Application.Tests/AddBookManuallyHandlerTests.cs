@@ -14,7 +14,7 @@ public sealed class AddBookManuallyHandlerTests
         IUnitOfWork? uow = null)
     {
         repo ??= Substitute.For<IBookTitleRepository>();
-        uow  ??= Substitute.For<IUnitOfWork>();
+        uow ??= Substitute.For<IUnitOfWork>();
         repo.FindByIsbnAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((BookTitle?)null);
         return new AddBookManuallyHandler(repo, uow);
@@ -24,12 +24,12 @@ public sealed class AddBookManuallyHandlerTests
     public async Task Handle_ValidInput_ReturnsSuccessAndPersistsBook()
     {
         var repo = Substitute.For<IBookTitleRepository>();
-        var uow  = Substitute.For<IUnitOfWork>();
+        var uow = Substitute.For<IUnitOfWork>();
         repo.FindByIsbnAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((BookTitle?)null);
 
         var handler = new AddBookManuallyHandler(repo, uow);
-        var result  = await handler.HandleAsync(new AddBookManuallyCommand("Clean Code", "Robert Martin", 2008));
+        var result = await handler.HandleAsync(new AddBookManuallyCommand("Clean Code", "Robert Martin", 2008));
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeEmpty();
@@ -42,7 +42,7 @@ public sealed class AddBookManuallyHandlerTests
     [Fact]
     public async Task Handle_EmptyTitle_ReturnsFailureWithoutHittingRepo()
     {
-        var repo    = Substitute.For<IBookTitleRepository>();
+        var repo = Substitute.For<IBookTitleRepository>();
         var handler = new AddBookManuallyHandler(repo, Substitute.For<IUnitOfWork>());
 
         var result = await handler.HandleAsync(new AddBookManuallyCommand("  ", "Author", 2008));
@@ -94,7 +94,7 @@ public sealed class AddBookManuallyHandlerTests
             .Returns((BookTitle?)null);
 
         var handler = new AddBookManuallyHandler(repo, Substitute.For<IUnitOfWork>());
-        var result  = await handler.HandleAsync(
+        var result = await handler.HandleAsync(
             new AddBookManuallyCommand("  Dune  ", "  Frank Herbert  ", 1965));
 
         result.IsSuccess.Should().BeTrue();

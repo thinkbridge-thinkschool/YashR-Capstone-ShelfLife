@@ -41,24 +41,24 @@ public sealed class SmtpNotificationSender : INotificationSender
 
         _db.DeliveryLogs.Add(new DeliveryLog
         {
-            RecipientId    = request.RecipientId,
+            RecipientId = request.RecipientId,
             RecipientEmail = request.RecipientEmail,
-            Subject        = request.Subject,
-            Channel        = request.Channel.ToString(),
-            SentAt         = DateTimeOffset.UtcNow,
-            Success        = true
+            Subject = request.Subject,
+            Channel = request.Channel.ToString(),
+            SentAt = DateTimeOffset.UtcNow,
+            Success = true
         });
         await _db.SaveChangesAsync(ct);
     }
 
     private async Task SendViaSmtpAsync(NotificationRequest request, string host, CancellationToken ct)
     {
-        var port      = _config.GetValue("Smtp:Port", 25);
+        var port = _config.GetValue("Smtp:Port", 25);
         var enableSsl = _config.GetValue("Smtp:EnableSsl", false);
-        var from      = _config["Smtp:FromAddress"] ?? "noreply@shelflife.dev";
-        var fromName  = _config["Smtp:FromName"] ?? "ShelfLife Library";
-        var user      = _config["Smtp:User"];
-        var password  = _config["Smtp:Password"];
+        var from = _config["Smtp:FromAddress"] ?? "noreply@shelflife.dev";
+        var fromName = _config["Smtp:FromName"] ?? "ShelfLife Library";
+        var user = _config["Smtp:User"];
+        var password = _config["Smtp:Password"];
 
 #pragma warning disable SYSLIB0006  // SmtpClient is superseded by MailKit but available without extra packages
         using var smtp = new SmtpClient(host, port) { EnableSsl = enableSsl };
@@ -70,7 +70,7 @@ public sealed class SmtpNotificationSender : INotificationSender
             new MailAddress(request.RecipientEmail))
         {
             Subject = request.Subject,
-            Body    = request.Body,
+            Body = request.Body,
             IsBodyHtml = false
         };
 

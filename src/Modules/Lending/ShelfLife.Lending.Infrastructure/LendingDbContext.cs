@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Infrastructure.Persistence;
 using ShelfLife.Lending.Contracts;
@@ -65,25 +65,33 @@ public sealed class LendingDbContext : ShelfLifeDbContext
     {
         LoanCreatedDomainEvent e => new AuditLog
         {
-            Action = "Borrow", ActorId = e.MemberId,
-            LoanId = e.LoanId, BookTitleId = e.BookTitleId, CopyId = e.CopyId,
+            Action = "Borrow",
+            ActorId = e.MemberId,
+            LoanId = e.LoanId,
+            BookTitleId = e.BookTitleId,
+            CopyId = e.CopyId,
             OccurredAt = e.OccurredAt
         },
         LoanReturnedDomainEvent e => new AuditLog
         {
-            Action = "Return", ActorId = e.MemberId,
-            LoanId = e.LoanId, BookTitleId = e.BookTitleId, CopyId = e.CopyId,
+            Action = "Return",
+            ActorId = e.MemberId,
+            LoanId = e.LoanId,
+            BookTitleId = e.BookTitleId,
+            CopyId = e.CopyId,
             OccurredAt = e.OccurredAt
         },
         HoldPlacedDomainEvent e => new AuditLog
         {
-            Action = "PlaceHold", ActorId = e.MemberId,
+            Action = "PlaceHold",
+            ActorId = e.MemberId,
             BookTitleId = e.BookTitleId,
             OccurredAt = e.OccurredAt
         },
         HoldReadyDomainEvent e => new AuditLog
         {
-            Action = "HoldReady", ActorId = e.MemberId,
+            Action = "HoldReady",
+            ActorId = e.MemberId,
             BookTitleId = e.BookTitleId,
             OccurredAt = e.OccurredAt
         },

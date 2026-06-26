@@ -23,12 +23,12 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
     // ── Unauthenticated access ────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("POST",   "/api/v1/catalog/books",         null)]
-    [InlineData("POST",   "/api/v1/catalog/books/manual",  null)]
-    [InlineData("POST",   "/api/v1/lending/loans",         null)]
-    [InlineData("GET",    "/api/v1/lending/loans",         null)]
-    [InlineData("GET",    "/api/v1/lending/holds",         null)]
-    [InlineData("GET",    "/api/v1/identity/members",      null)]
+    [InlineData("POST", "/api/v1/catalog/books", null)]
+    [InlineData("POST", "/api/v1/catalog/books/manual", null)]
+    [InlineData("POST", "/api/v1/lending/loans", null)]
+    [InlineData("GET", "/api/v1/lending/loans", null)]
+    [InlineData("GET", "/api/v1/lending/holds", null)]
+    [InlineData("GET", "/api/v1/identity/members", null)]
     public async Task LibrarianEndpoint_WithNoToken_Returns401(string method, string url, object? _)
     {
         var client = factory.CreateClient();
@@ -40,12 +40,12 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
     // ── Role enforcement: Member cannot access Librarian endpoints ────────────
 
     [Theory]
-    [InlineData("POST",  "/api/v1/catalog/books")]
-    [InlineData("POST",  "/api/v1/catalog/books/manual")]
-    [InlineData("POST",  "/api/v1/lending/loans")]
-    [InlineData("GET",   "/api/v1/lending/loans")]
-    [InlineData("GET",   "/api/v1/lending/holds")]
-    [InlineData("GET",   "/api/v1/identity/members")]
+    [InlineData("POST", "/api/v1/catalog/books")]
+    [InlineData("POST", "/api/v1/catalog/books/manual")]
+    [InlineData("POST", "/api/v1/lending/loans")]
+    [InlineData("GET", "/api/v1/lending/loans")]
+    [InlineData("GET", "/api/v1/lending/holds")]
+    [InlineData("GET", "/api/v1/identity/members")]
     public async Task LibrarianEndpoint_WithMemberToken_Returns403(string method, string url)
     {
         var client = factory.CreateClient();
@@ -108,7 +108,7 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", TestTokenHelper.LibrarianToken(Guid.NewGuid()));
 
-        var encoded  = Uri.EscapeDataString(payload);
+        var encoded = Uri.EscapeDataString(payload);
         var response = await client.GetAsync(
             $"/api/v1/identity/members?page=1&pageSize=20&search={encoded}");
 
@@ -125,7 +125,7 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", TestTokenHelper.LibrarianToken(Guid.NewGuid()));
 
-        var encoded  = Uri.EscapeDataString(payload);
+        var encoded = Uri.EscapeDataString(payload);
         var response = await client.GetAsync(
             $"/api/v1/catalog/books?page=1&pageSize=20&search={encoded}");
 
@@ -142,7 +142,7 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", TestTokenHelper.LibrarianToken(Guid.NewGuid()));
 
-        var encoded  = Uri.EscapeDataString(payload);
+        var encoded = Uri.EscapeDataString(payload);
         var response = await client.GetAsync(
             $"/api/v1/lending/loans?page=1&pageSize=20&activeOnly=false&search={encoded}");
 
@@ -156,22 +156,22 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
     {
         return method.ToUpper() switch
         {
-            "GET"    => await client.GetAsync(url),
-            "POST"   => await client.PostAsJsonAsync(url, new { }),
+            "GET" => await client.GetAsync(url),
+            "POST" => await client.PostAsJsonAsync(url, new { }),
             "DELETE" => await client.DeleteAsync(url),
-            _        => throw new ArgumentOutOfRangeException(nameof(method)),
+            _ => throw new ArgumentOutOfRangeException(nameof(method)),
         };
     }
 
     private static string GenerateExpiredToken()
     {
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestTokenHelper.Secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestTokenHelper.Secret));
         var token = new JwtSecurityToken(
-            issuer:             TestTokenHelper.Issuer,
-            audience:           TestTokenHelper.Audience,
-            claims:             [new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()), new Claim("role", "Librarian")],
-            notBefore:          DateTime.UtcNow.AddHours(-2),
-            expires:            DateTime.UtcNow.AddHours(-1),  // expired 1 h ago
+            issuer: TestTokenHelper.Issuer,
+            audience: TestTokenHelper.Audience,
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()), new Claim("role", "Librarian")],
+            notBefore: DateTime.UtcNow.AddHours(-2),
+            expires: DateTime.UtcNow.AddHours(-1),  // expired 1 h ago
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -181,10 +181,10 @@ public sealed class SecurityTests(ShelfLifeApiFactory factory)
         var wrongKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes("wrong-secret-key-that-is-32chars!!"));
         var token = new JwtSecurityToken(
-            issuer:             TestTokenHelper.Issuer,
-            audience:           TestTokenHelper.Audience,
-            claims:             [new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()), new Claim("role", "Librarian")],
-            expires:            DateTime.UtcNow.AddHours(1),
+            issuer: TestTokenHelper.Issuer,
+            audience: TestTokenHelper.Audience,
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()), new Claim("role", "Librarian")],
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: new SigningCredentials(wrongKey, SecurityAlgorithms.HmacSha256));
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

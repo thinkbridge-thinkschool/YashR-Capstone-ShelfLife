@@ -27,7 +27,7 @@ namespace ShelfLife.Api.IntegrationTests.Tests;
 [Trait("Category", "Integration")]
 public sealed class PerformanceTests(ShelfLifeApiFactory factory, ITestOutputHelper output)
 {
-    private const int WarmupRequests  = 20;
+    private const int WarmupRequests = 20;
     private const int MeasuredRequests = 200;
 
     [Fact]
@@ -42,8 +42,8 @@ public sealed class PerformanceTests(ShelfLifeApiFactory factory, ITestOutputHel
         {
             await libClient.PostAsJsonAsync("/api/v1/catalog/books/manual", new
             {
-                Title           = $"Perf Book {i:D3}",
-                Author          = $"Perf Author {i:D3}",
+                Title = $"Perf Book {i:D3}",
+                Author = $"Perf Author {i:D3}",
                 PublicationYear = 2000 + (i % 24),
             });
         }
@@ -72,11 +72,11 @@ public sealed class PerformanceTests(ShelfLifeApiFactory factory, ITestOutputHel
         // ── Compute statistics ───────────────────────────────────────────────
         latencies.Sort();
 
-        var p50  = Percentile(latencies, 50);
-        var p95  = Percentile(latencies, 95);
-        var p99  = Percentile(latencies, 99);
+        var p50 = Percentile(latencies, 50);
+        var p95 = Percentile(latencies, 95);
+        var p99 = Percentile(latencies, 99);
         var mean = latencies.Average();
-        var max  = latencies.Max();
+        var max = latencies.Max();
 
         output.WriteLine("══════════════════════════════════════════════════");
         output.WriteLine($"  GET /api/v1/catalog/books — {MeasuredRequests} requests (after AsNoTracking fix)");

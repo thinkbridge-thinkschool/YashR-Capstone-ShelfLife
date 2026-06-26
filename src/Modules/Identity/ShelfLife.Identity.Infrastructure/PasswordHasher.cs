@@ -1,4 +1,4 @@
-﻿using ShelfLife.Identity.Application;
+using ShelfLife.Identity.Application;
 using System.Security.Cryptography;
 
 namespace ShelfLife.Identity.Infrastructure;

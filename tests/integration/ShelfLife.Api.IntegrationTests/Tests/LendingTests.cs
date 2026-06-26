@@ -44,7 +44,7 @@ public sealed class LendingTests(ShelfLifeApiFactory factory)
     {
         var resp = await client.PostAsJsonAsync("/api/v1/identity/register", new
         {
-            Email    = $"lender-{Guid.NewGuid()}@test.com",
+            Email = $"lender-{Guid.NewGuid()}@test.com",
             FullName = "Integration Lender",
             Password = "Pass123!",
         });

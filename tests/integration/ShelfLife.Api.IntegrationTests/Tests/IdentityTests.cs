@@ -64,7 +64,7 @@ public sealed class IdentityTests(ShelfLifeApiFactory factory)
     [Fact]
     public async Task Login_ValidCredentials_Returns200WithToken()
     {
-        var email    = $"login-{Guid.NewGuid()}@test.com";
+        var email = $"login-{Guid.NewGuid()}@test.com";
         var password = "Pass123!";
         await _client.PostAsJsonAsync("/api/v1/identity/register",
             new { Email = email, FullName = "Login Member", Password = password });

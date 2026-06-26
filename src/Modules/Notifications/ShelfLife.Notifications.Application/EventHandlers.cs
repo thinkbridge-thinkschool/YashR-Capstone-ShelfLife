@@ -1,4 +1,4 @@
-﻿using ShelfLife.Lending.Contracts;
+using ShelfLife.Lending.Contracts;
 using ShelfLife.SharedKernel;
 
 namespace ShelfLife.Notifications.Application;

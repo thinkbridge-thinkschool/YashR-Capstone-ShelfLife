@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using ShelfLife.Catalog.Domain;
 using Xunit;
 
@@ -122,7 +122,7 @@ public sealed class BookTitleTests
     public void Isbn_CreateManual_IsDeterministic()
     {
         var id = Guid.NewGuid();
-        var first  = Isbn.CreateManual(id);
+        var first = Isbn.CreateManual(id);
         var second = Isbn.CreateManual(id);
         first.Value.Should().Be(second.Value);
     }

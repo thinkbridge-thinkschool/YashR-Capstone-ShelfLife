@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ShelfLife.Insights.Application;
 using ShelfLife.Insights.Contracts;
 using ShelfLife.SharedKernel;

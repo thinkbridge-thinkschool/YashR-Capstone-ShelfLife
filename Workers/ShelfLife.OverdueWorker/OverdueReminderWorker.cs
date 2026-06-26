@@ -45,8 +45,8 @@ public sealed class OverdueReminderWorker : BackgroundService
 
         await using var scope = _scopeFactory.CreateAsyncScope();
         var repo = scope.ServiceProvider.GetRequiredService<ILoanRepository>();
-        var db   = scope.ServiceProvider.GetRequiredService<LendingDbContext>();
-        var uow  = scope.ServiceProvider.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
+        var db = scope.ServiceProvider.GetRequiredService<LendingDbContext>();
+        var uow = scope.ServiceProvider.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
 
         var overdue = await repo.GetOverdueLoansAsync(ct);
         activity?.SetTag("overdue.count", overdue.Count);
@@ -64,8 +64,8 @@ public sealed class OverdueReminderWorker : BackgroundService
             db.OutboxMessages.Add(new OutboxMessage
             {
                 TopicName = "shelflife.lending.loan-overdue",
-                Type      = nameof(LoanOverdueEvent),
-                Payload   = JsonSerializer.Serialize(@event)
+                Type = nameof(LoanOverdueEvent),
+                Payload = JsonSerializer.Serialize(@event)
             });
 
             loan.RecordReminderSent();

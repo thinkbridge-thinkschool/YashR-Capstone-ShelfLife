@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Insights.Contracts;
+namespace ShelfLife.Insights.Contracts;
 
 public sealed record PopularTitleDto(Guid BookTitleId, string Title, string Author, int BorrowCount);
 

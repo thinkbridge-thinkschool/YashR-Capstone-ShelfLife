@@ -45,9 +45,9 @@ public sealed class ShelfLifeApiFactory : WebApplicationFactory<Program>, IAsync
                 ["ConnectionStrings:ShelfLife"] = _sql.GetConnectionString(),
 
                 // HS256 keys used by JwtService and test token helper
-                ["Jwt:Issuer"]   = TestTokenHelper.Issuer,
+                ["Jwt:Issuer"] = TestTokenHelper.Issuer,
                 ["Jwt:Audience"] = TestTokenHelper.Audience,
-                ["Jwt:Secret"]   = TestTokenHelper.Secret,
+                ["Jwt:Secret"] = TestTokenHelper.Secret,
 
                 // Prevent ServiceBusClient from throwing on null namespace
                 ["ServiceBus:FullyQualifiedNamespace"] = "fake.servicebus.windows.net",
@@ -57,7 +57,7 @@ public sealed class ShelfLifeApiFactory : WebApplicationFactory<Program>, IAsync
 
                 // Remove the rate-limit ceiling so all tests can register members freely
                 ["RateLimiter:Identity:PermitLimit"] = "10000",
-                ["RateLimiter:Api:PermitLimit"]      = "10000",
+                ["RateLimiter:Api:PermitLimit"] = "10000",
             });
         });
 

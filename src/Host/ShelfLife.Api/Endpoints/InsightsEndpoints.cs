@@ -14,7 +14,7 @@ public static class InsightsEndpoints
             InsightsQueryHandler handler,
             CancellationToken ct) =>
         {
-            page     = Math.Max(1, page);
+            page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
             return Results.Ok(await handler.HandleAsync(new GetPopularTitlesQuery(page, pageSize, search), ct));
         });
@@ -24,7 +24,7 @@ public static class InsightsEndpoints
             InsightsQueryHandler handler,
             CancellationToken ct) =>
         {
-            page     = Math.Max(1, page);
+            page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
             return Results.Ok(await handler.HandleAsync(new GetOverdueLoansQuery(page, pageSize, search), ct));
         });
@@ -34,7 +34,7 @@ public static class InsightsEndpoints
             InsightsQueryHandler handler,
             CancellationToken ct) =>
         {
-            page     = Math.Max(1, page);
+            page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
             return Results.Ok(await handler.HandleAsync(new GetMemberActivityQuery(page, pageSize), ct));
         });

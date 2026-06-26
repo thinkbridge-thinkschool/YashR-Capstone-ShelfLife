@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Infrastructure.Messaging;
+namespace ShelfLife.Infrastructure.Messaging;
 
 public interface IMessagePublisher
 {

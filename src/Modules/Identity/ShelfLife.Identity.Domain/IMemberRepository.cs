@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Identity.Domain;
+namespace ShelfLife.Identity.Domain;
 
 public interface IMemberRepository
 {

@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Notifications.Application;
+namespace ShelfLife.Notifications.Application;
 
 public interface IIdempotencyStore
 {

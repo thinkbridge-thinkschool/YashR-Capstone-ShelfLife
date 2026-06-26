@@ -1,4 +1,4 @@
-﻿using ShelfLife.Insights.Contracts;
+using ShelfLife.Insights.Contracts;
 using ShelfLife.SharedKernel;
 
 namespace ShelfLife.Insights.Application;

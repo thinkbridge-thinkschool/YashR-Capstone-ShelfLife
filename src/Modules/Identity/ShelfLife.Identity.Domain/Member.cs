@@ -1,4 +1,4 @@
-﻿using ShelfLife.SharedKernel;
+using ShelfLife.SharedKernel;
 
 namespace ShelfLife.Identity.Domain;
 

@@ -1,4 +1,4 @@
-﻿namespace ShelfLife.Infrastructure.Outbox;
+namespace ShelfLife.Infrastructure.Outbox;
 
 public interface IOutboxStore
 {

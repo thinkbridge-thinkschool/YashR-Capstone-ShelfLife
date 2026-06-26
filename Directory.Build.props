@@ -6,6 +6,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>latest</LangVersion>
     <!-- Suppress NuGet package version resolution and audit warnings -->
-    <NoWarn>NU1603;NU1902;NU1903;NU1904</NoWarn>
+    <!-- NU1510: explicit System.Security.Cryptography.Xml ref overrides vulnerable transitive 9.0.0 from Microsoft.Identity.Web -->
+    <NoWarn>NU1603;NU1902;NU1903;NU1904;NU1510</NoWarn>
   </PropertyGroup>
 </Project>

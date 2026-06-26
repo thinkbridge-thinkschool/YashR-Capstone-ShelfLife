@@ -15,7 +15,7 @@ export const options = {
   },
 };
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 
 export function setup() {
   const res = http.post(

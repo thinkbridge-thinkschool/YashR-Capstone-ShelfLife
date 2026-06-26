@@ -1,6 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { timer } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -13,6 +15,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LendingService } from '../lending.service';
 import { LoanSummaryDto } from '../../shared/models/lending.models';
+
+const POLL_INTERVAL_MS = 15_000;
 
 @Component({
   selector: 'app-loans',
@@ -35,6 +39,7 @@ export class LoansComponent implements OnInit {
   private readonly lending = inject(LendingService);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly data = signal<LoanSummaryDto[]>([]);
   readonly totalCount = signal(0);
@@ -48,8 +53,8 @@ export class LoansComponent implements OnInit {
 
   displayedColumns: string[] = [];
 
-  private currentPage = 1;
-  private currentPageSize = 20;
+  currentPage = 1;
+  currentPageSize = 20;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
@@ -66,6 +71,10 @@ export class LoansComponent implements OnInit {
       ? ['member', 'book', 'borrowedAt', 'dueDate', 'status', 'actions']
       : ['member', 'book', 'borrowedAt', 'dueDate', 'status'];
     this.load(1, 20);
+    // Auto-refresh so librarian sees new borrows and returns without manual refresh
+    timer(POLL_INTERVAL_MS, POLL_INTERVAL_MS)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.silentRefresh());
   }
 
   onSearchInput(value: string): void {
@@ -90,6 +99,17 @@ export class LoansComponent implements OnInit {
         this.loading.set(false);
         this.error.set('Failed to load loans.');
       },
+    });
+  }
+
+  private silentRefresh(): void {
+    const search = this.searchValue() || undefined;
+    this.lending.getLoans(this.currentPage, this.currentPageSize, this.activeOnly(), search).subscribe({
+      next: res => {
+        this.data.set(res.items);
+        this.totalCount.set(res.totalCount);
+      },
+      error: () => {},
     });
   }
 

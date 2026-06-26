@@ -1,10 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ShelfLife.Infrastructure.Messaging;
+using ShelfLife.Infrastructure.Outbox;
 using ShelfLife.Lending.Contracts;
 using ShelfLife.Lending.Domain;
+using ShelfLife.Lending.Infrastructure;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace ShelfLife.OverdueWorker;
 
@@ -42,9 +44,9 @@ public sealed class OverdueReminderWorker : BackgroundService
             "OverdueWorker.ProcessCycle", ActivityKind.Server);
 
         await using var scope = _scopeFactory.CreateAsyncScope();
-        var repo      = scope.ServiceProvider.GetRequiredService<ILoanRepository>();
-        var publisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
-        var uow       = scope.ServiceProvider.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
+        var repo = scope.ServiceProvider.GetRequiredService<ILoanRepository>();
+        var db   = scope.ServiceProvider.GetRequiredService<LendingDbContext>();
+        var uow  = scope.ServiceProvider.GetRequiredService<ShelfLife.SharedKernel.IUnitOfWork>();
 
         var overdue = await repo.GetOverdueLoansAsync(ct);
         activity?.SetTag("overdue.count", overdue.Count);
@@ -57,9 +59,15 @@ public sealed class OverdueReminderWorker : BackgroundService
                 loan.Id, loan.MemberId, loan.BookTitleId,
                 loan.Period.DueDate);
 
-            // ServiceBusPublisher stamps Activity.Current.Id as "traceparent"
-            // on the message — any downstream consumer can restore the trace.
-            await publisher.PublishAsync("lending.overdue", @event, ct);
+            // Write to outbox so OutboxRelayWorker publishes to Service Bus
+            // and NotificationDispatchWorker delivers the overdue alert.
+            db.OutboxMessages.Add(new OutboxMessage
+            {
+                TopicName = "shelflife.lending.loan-overdue",
+                Type      = nameof(LoanOverdueEvent),
+                Payload   = JsonSerializer.Serialize(@event)
+            });
+
             loan.RecordReminderSent();
         }
 

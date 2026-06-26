@@ -1,5 +1,11 @@
 ﻿namespace ShelfLife.Insights.Infrastructure;
 
+public sealed class ProcessedProjectionEvent
+{
+    public Guid MessageId { get; set; }
+    public DateTimeOffset ProcessedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
 public sealed class PopularTitleProjection
 {
     public Guid BookTitleId { get; set; }

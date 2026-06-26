@@ -38,6 +38,10 @@ export class LoginComponent {
   readonly error = signal<string | null>(null);
   readonly hidePassword = signal(true);
 
+  fillDemo(): void {
+    this.form.setValue({ email: 'librarian@shelflife.dev', password: 'Librarian@123' });
+  }
+
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);

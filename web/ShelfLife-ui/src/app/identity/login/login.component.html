@@ -12,6 +12,24 @@
     </mat-card-header>
 
     <mat-card-content>
+
+      <!-- Demo credentials banner -->
+      <div style="background:#e8f4fd;border:1px solid #b3d9f5;border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:#0066b2;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;">
+          Demo — Librarian Account
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="font-size:13px;color:#1a202c;line-height:1.7;">
+            <span style="color:#5a6478;">Email&nbsp;&nbsp;&nbsp;</span><strong>librarian&#64;shelflife.dev</strong><br>
+            <span style="color:#5a6478;">Password&nbsp;</span><strong>Librarian&#64;123</strong>
+          </div>
+          <button mat-stroked-button type="button" (click)="fillDemo()"
+                  style="font-size:12px;height:32px;line-height:32px;color:#0066b2;border-color:#0066b2;flex-shrink:0;">
+            Use these
+          </button>
+        </div>
+      </div>
+
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
         <mat-form-field appearance="outline" class="full-width">

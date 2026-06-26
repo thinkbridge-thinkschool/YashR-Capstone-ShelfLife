@@ -56,14 +56,31 @@
         }
         <mat-autocomplete #bookAuto="matAutocomplete" (optionSelected)="onBookSelected($event)">
           @for (book of bookOptions(); track book.bookTitleId) {
-            <mat-option [value]="book">
+            <mat-option [value]="book" [disabled]="book.availableCopies === 0">
               <span>{{ book.title }}</span>
               <span style="font-size:12px;color:#888;margin-left:8px">{{ book.author }}</span>
+              @if (book.availableCopies > 0) {
+                <span style="font-size:11px;color:#2e7d32;margin-left:8px;font-weight:600">
+                  {{ book.availableCopies }} available
+                </span>
+              } @else {
+                <span style="font-size:11px;color:#c62828;margin-left:8px;font-weight:600">
+                  No copies — place a hold
+                </span>
+              }
             </mat-option>
           }
         </mat-autocomplete>
         @if (selectedBookTitleId()) {
-          <mat-hint style="color:#2e7d32">Book selected</mat-hint>
+          @if (selectedBookAvailableCopies() === 0) {
+            <mat-hint style="color:#c62828;font-weight:500">
+              No available copies — add a copy first or place a hold
+            </mat-hint>
+          } @else {
+            <mat-hint style="color:#2e7d32">
+              Book selected &nbsp;·&nbsp; {{ selectedBookAvailableCopies() }} cop{{ selectedBookAvailableCopies() === 1 ? 'y' : 'ies' }} available
+            </mat-hint>
+          }
         } @else {
           <mat-hint>Type at least 2 characters to search</mat-hint>
         }
@@ -77,8 +94,9 @@
       }
 
       <div class="form-actions">
-        <button mat-flat-button color="primary" type="submit"
-                [disabled]="loading() || !selectedMemberId() || !selectedBookTitleId()">
+        <button mat-flat-button color="primary" type="button"
+                (click)="onSubmit()"
+                [disabled]="loading() || !selectedMemberId() || !selectedBookTitleId() || selectedBookAvailableCopies() === 0">
           @if (loading()) {
             <div class="btn-spinner-wrap">
               <mat-spinner diameter="20"></mat-spinner>
@@ -94,37 +112,3 @@
   </mat-card-content>
 </mat-card>
 
-@if (result()) {
-  <div class="result-panel">
-    <div class="result-title">
-      <mat-icon>check_circle</mat-icon>
-      Loan created successfully
-    </div>
-
-    <div class="result-row">
-      <span class="result-label">Loan ID</span>
-      <span class="result-value">{{ result()!.loanId }}</span>
-      <button mat-icon-button
-              [matTooltip]="copied() ? 'Copied!' : 'Copy Loan ID'"
-              (click)="copyLoanId(result()!.loanId)"
-              style="width:32px;height:32px;line-height:32px">
-        <mat-icon style="font-size:18px">{{ copied() ? 'done' : 'content_copy' }}</mat-icon>
-      </button>
-    </div>
-
-    <div class="result-row">
-      <span class="result-label">Due Date</span>
-      <span class="result-value">{{ result()!.dueDate | date:'mediumDate' }}</span>
-    </div>
-
-    <div class="result-row">
-      <span class="result-label">Status</span>
-      <span style="font-size:13px;font-weight:600;color:#2e7d32">Active</span>
-    </div>
-
-    <div class="info-banner" style="margin-top:8px;margin-bottom:0">
-      <mat-icon>info</mat-icon>
-      <span>Save this Loan ID &mdash; you will need it when returning the book.</span>
-    </div>
-  </div>
-}

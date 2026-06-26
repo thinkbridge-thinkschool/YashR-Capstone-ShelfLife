@@ -1,13 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -16,7 +15,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LendingService } from '../lending.service';
 import { MembersService } from '../../shared/services/members.service';
 import { CatalogService } from '../../catalog/catalog.service';
-import { BorrowBookResponse } from '../../shared/models/lending.models';
 import { MemberSummaryDto } from '../../shared/models/identity.models';
 import { BookSummaryDto } from '../../shared/models/catalog.models';
 
@@ -25,14 +23,12 @@ import { BookSummaryDto } from '../../shared/models/catalog.models';
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    DatePipe,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatTableModule,
     MatTooltipModule,
     MatAutocompleteModule,
   ],
@@ -43,22 +39,23 @@ export class BorrowBookComponent {
   private readonly membersService = inject(MembersService);
   private readonly catalogService = inject(CatalogService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   readonly memberSearch = new FormControl('');
   readonly bookSearch = new FormControl('');
 
   private readonly _selectedMemberId = signal<string | null>(null);
   private readonly _selectedBookTitleId = signal<string | null>(null);
+  private readonly _selectedBookAvailableCopies = signal<number | null>(null);
   readonly selectedMemberId = this._selectedMemberId.asReadonly();
   readonly selectedBookTitleId = this._selectedBookTitleId.asReadonly();
+  readonly selectedBookAvailableCopies = this._selectedBookAvailableCopies.asReadonly();
 
   readonly memberOptions = signal<MemberSummaryDto[]>([]);
   readonly bookOptions = signal<BookSummaryDto[]>([]);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly result = signal<BorrowBookResponse | null>(null);
-  readonly copied = signal(false);
 
   constructor() {
     this.memberSearch.valueChanges.pipe(
@@ -91,6 +88,7 @@ export class BorrowBookComponent {
   onBookSelected(event: MatAutocompleteSelectedEvent): void {
     const book = event.option.value as BookSummaryDto;
     this._selectedBookTitleId.set(book.bookTitleId);
+    this._selectedBookAvailableCopies.set(book.availableCopies);
     this.bookSearch.setValue(`${book.title} — ${book.author}`, { emitEvent: false });
   }
 
@@ -101,6 +99,7 @@ export class BorrowBookComponent {
 
   onBookClear(): void {
     this._selectedBookTitleId.set(null);
+    this._selectedBookAvailableCopies.set(null);
     this.bookSearch.setValue('');
   }
 
@@ -115,25 +114,32 @@ export class BorrowBookComponent {
     this.error.set(null);
 
     this.lending.borrowBook(memberId, bookTitleId).subscribe({
-      next: res => {
+      next: () => {
         this.loading.set(false);
-        this.result.set(res);
         this.onMemberClear();
         this.onBookClear();
-        this.snackBar.open('Loan issued successfully.', 'Dismiss', { duration: 4000 });
+        this.snackBar.open('Loan issued! Redirecting to Active Loans…', 'Dismiss', { duration: 3000 });
+        setTimeout(() => this.router.navigate(['/lending/loans']), 1500);
       },
       error: err => {
         this.loading.set(false);
-        const msg = typeof err.error === 'string' ? err.error : 'Failed to borrow book.';
+        let msg: string;
+        if (err.status === 0) {
+          msg = 'Cannot reach the API. Make sure the server is running on port 5000.';
+        } else if (err.status === 401) {
+          msg = 'Session expired — please log out and log in again.';
+        } else if (err.status === 429) {
+          msg = 'Too many requests — wait a moment and try again.';
+        } else if (typeof err.error === 'string' && err.error) {
+          msg = err.error;
+        } else if (err.error?.title) {
+          msg = err.error.title;
+        } else {
+          msg = `Server error (${err.status}). Check API logs for details.`;
+        }
         this.error.set(msg);
       },
     });
   }
 
-  copyLoanId(value: string): void {
-    navigator.clipboard.writeText(value).then(() => {
-      this.copied.set(true);
-      setTimeout(() => this.copied.set(false), 2000);
-    });
-  }
 }

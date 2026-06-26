@@ -24,6 +24,17 @@ jobs:
       - name: Build
         run: dotnet build ShelfLife.slnx --no-restore --configuration Release
 
+      - name: Vulnerability Scan
+        run: |
+          dotnet list ShelfLife.slnx package --vulnerable --include-transitive 2>&1 | tee vuln-report.txt
+          if grep -qiE "(Critical|High)" vuln-report.txt; then
+            echo "::error::Critical or High severity vulnerabilities found — see vuln-report.txt"
+            exit 1
+          fi
+
+      - name: Format Check
+        run: dotnet format ShelfLife.slnx --verify-no-changes
+
       - name: Unit Tests
         run: >
           dotnet test ShelfLife.slnx

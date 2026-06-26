@@ -90,13 +90,15 @@ export const routes: Routes = [
           import('./lending/holds/holds.component').then(m => m.HoldsComponent),
       },
 
-      // ── Member-only routes ───────────────────────────────────────────────
+      // ── Shared routes (catalog search accessible to both roles) ─────────
       {
         path: 'catalog/search',
-        canActivate: [memberGuard],
+        canActivate: [authGuard],
         loadComponent: () =>
           import('./catalog/search-books/search-books.component').then(m => m.SearchBooksComponent),
       },
+
+      // ── Member-only routes ───────────────────────────────────────────────
       {
         path: 'lending/my-loans',
         canActivate: [memberGuard],

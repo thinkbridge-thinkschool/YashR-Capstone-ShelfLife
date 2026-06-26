@@ -8,6 +8,9 @@
   <ItemGroup>
     <ProjectReference Include="..\ShelfLife.Insights.Application\ShelfLife.Insights.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Shared\ShelfLife.Infrastructure.Persistence\ShelfLife.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\Catalog\ShelfLife.Catalog.Infrastructure\ShelfLife.Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Identity\ShelfLife.Identity.Infrastructure\ShelfLife.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Lending\ShelfLife.Lending.Contracts\ShelfLife.Lending.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

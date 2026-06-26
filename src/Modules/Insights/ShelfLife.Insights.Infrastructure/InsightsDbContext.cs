@@ -11,6 +11,7 @@ public sealed class InsightsDbContext : ShelfLifeDbContext
     public DbSet<PopularTitleProjection> PopularTitleProjections => Set<PopularTitleProjection>();
     public DbSet<OverdueLoanProjection> OverdueLoanProjections => Set<OverdueLoanProjection>();
     public DbSet<MemberActivityProjection> MemberActivityProjections => Set<MemberActivityProjection>();
+    public DbSet<ProcessedProjectionEvent> ProcessedProjectionEvents => Set<ProcessedProjectionEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,6 +36,13 @@ public sealed class InsightsDbContext : ShelfLifeDbContext
         {
             b.ToTable("MemberActivity", "insights");
             b.HasKey(x => x.MemberId);
+        });
+
+        modelBuilder.Entity<ProcessedProjectionEvent>(b =>
+        {
+            b.ToTable("ProcessedProjectionEvents", "insights");
+            b.HasKey(x => x.MessageId);
+            b.HasIndex(x => x.ProcessedAt);
         });
     }
 }

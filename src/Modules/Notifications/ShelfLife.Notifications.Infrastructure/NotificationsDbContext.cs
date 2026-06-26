@@ -10,6 +10,7 @@ public sealed class NotificationsDbContext : ShelfLifeDbContext
 
     public DbSet<DeliveryLog> DeliveryLogs => Set<DeliveryLog>();
     public DbSet<IdempotencyKey> IdempotencyKeys => Set<IdempotencyKey>();
+    public DbSet<DispatchedNotification> DispatchedNotifications => Set<DispatchedNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,7 +31,20 @@ public sealed class NotificationsDbContext : ShelfLifeDbContext
             b.ToTable("IdempotencyKeys", "notifications");
             b.HasKey(x => x.EventId);
         });
+
+        modelBuilder.Entity<DispatchedNotification>(b =>
+        {
+            b.ToTable("DispatchedNotifications", "notifications");
+            b.HasKey(x => x.MessageId);
+            b.HasIndex(x => x.DispatchedAt);
+        });
     }
+}
+
+public sealed class DispatchedNotification
+{
+    public Guid MessageId { get; set; }
+    public DateTimeOffset DispatchedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
 public sealed class DeliveryLog

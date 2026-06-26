@@ -20,6 +20,7 @@ public static class NotificationsModule
         services.AddScoped<BookBorrowedNotificationHandler>();
         services.AddScoped<HoldReadyNotificationHandler>();
         services.AddScoped<LoanOverdueNotificationHandler>();
+        services.AddHostedService<NotificationDispatchWorker>();
 
         return services;
     }

@@ -60,6 +60,8 @@ namespace ShelfLife.Notifications.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OriginalMessageId");
+
                     b.ToTable("DeadLetterMessages", null, t =>
                         {
                             t.ExcludeFromMigrations();
@@ -140,6 +142,22 @@ namespace ShelfLife.Notifications.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("DeliveryLogs", "notifications");
+                });
+
+            modelBuilder.Entity("ShelfLife.Notifications.Infrastructure.DispatchedNotification", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("DispatchedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("DispatchedAt");
+
+                    b.ToTable("DispatchedNotifications", "notifications");
                 });
 
             modelBuilder.Entity("ShelfLife.Notifications.Infrastructure.IdempotencyKey", b =>

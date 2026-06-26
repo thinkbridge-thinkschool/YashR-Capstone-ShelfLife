@@ -1,10 +1,9 @@
-using Azure.Identity;
-using Azure.Messaging.ServiceBus;
 using Azure.Monitor.OpenTelemetry.Exporter;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using ShelfLife.Infrastructure.Messaging;
 using ShelfLife.Lending.Infrastructure;
 using ShelfLife.OverdueWorker;
 
@@ -18,22 +17,26 @@ builder.Services.AddSerilog(cfg => cfg
     .WriteTo.Console());
 
 // ── OpenTelemetry → Azure Monitor ─────────────────────────────────────────────
-// AddAzureMonitorTraceExporter reads APPLICATIONINSIGHTS_CONNECTION_STRING from
-// environment or ApplicationInsights:ConnectionString from configuration.
-builder.Services.AddOpenTelemetry()
+// Only register Azure Monitor exporter when the connection string is present.
+// In local dev (Docker) the env var is absent, so skip it to avoid a crash.
+var aiConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+var otel = builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("ShelfLife.OverdueWorker"))
-    .WithTracing(t => t
-        .AddSource(OverdueReminderWorker.ActivitySource.Name)
-        .AddAzureMonitorTraceExporter());
+    .WithTracing(t => t.AddSource(OverdueReminderWorker.ActivitySource.Name));
 
-// ── Service Bus (needed by IMessagePublisher / OverdueReminderWorker) ─────────
-builder.Services.AddSingleton(sp => new ServiceBusClient(
-    builder.Configuration["ServiceBus:FullyQualifiedNamespace"],
-    new DefaultAzureCredential()));
-builder.Services.AddScoped<IMessagePublisher, ServiceBusPublisher>();
+if (!string.IsNullOrEmpty(aiConnectionString))
+    otel.WithTracing(t => t.AddAzureMonitorTraceExporter());
 
-// ── Modules ───────────────────────────────────────────────────────────────────
-builder.Services.AddLendingModule(builder.Configuration);
+// ── Minimal Lending registration ──────────────────────────────────────────────
+// The worker only needs LendingDbContext + ILoanRepository to find overdue loans
+// and write outbox messages.  AddLendingModule also registers application
+// handlers (BorrowBookHandler etc.) that require IBookTitleRepository from the
+// Catalog module — which is not available here, causing DI validation to fail.
+builder.Services.AddDbContext<LendingDbContext>(opts =>
+    opts.UseSqlServer(builder.Configuration.GetConnectionString("ShelfLife"))
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+
+builder.Services.AddScoped<ShelfLife.Lending.Domain.ILoanRepository, LoanRepository>();
 
 // Worker only uses LendingDbContext, so IUnitOfWork delegates straight to it.
 builder.Services.AddScoped<ShelfLife.SharedKernel.IUnitOfWork>(sp =>

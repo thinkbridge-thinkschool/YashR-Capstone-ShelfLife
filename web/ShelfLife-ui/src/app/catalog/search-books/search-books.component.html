@@ -1,6 +1,10 @@
 <div class="page-header">
   <h2>Search Books</h2>
-  <p>Browse the library catalog. Borrow available books at the desk, or place a hold on unavailable ones.</p>
+  @if (auth.isLibrarian()) {
+    <p>Browse the library catalog. Check availability and copy counts for all titles.</p>
+  } @else {
+    <p>Browse the library catalog. Borrow available books at the desk, or place a hold on unavailable ones.</p>
+  }
 </div>
 
 <mat-card class="table-card">
@@ -91,7 +95,7 @@
                   style="background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.4)">
               No copies
             </span>
-          } @else {
+          } @else if (!auth.isLibrarian()) {
             <button mat-stroked-button
                     color="accent"
                     style="font-size:12px;height:32px;line-height:32px"
@@ -105,6 +109,11 @@
                 Place Hold
               }
             </button>
+          } @else {
+            <span class="role-chip"
+                  style="background:rgba(198,40,40,0.1);color:#c62828">
+              All on loan
+            </span>
           }
         </td>
       </ng-container>
@@ -126,12 +135,14 @@
 
 </mat-card>
 
-<!-- Info banner -->
-<div class="info-banner" style="margin-top:16px">
-  <mat-icon>info</mat-icon>
-  <span>
-    To borrow an available book, visit the library desk and ask the librarian to issue a loan.
-    For unavailable books, click <strong>Place Hold</strong> to join the queue — check
-    <a routerLink="/lending/my-holds" style="color:#1565c0">My Holds</a> for status updates.
-  </span>
-</div>
+<!-- Info banner — member only -->
+@if (!auth.isLibrarian()) {
+  <div class="info-banner" style="margin-top:16px">
+    <mat-icon>info</mat-icon>
+    <span>
+      To borrow an available book, visit the library desk and ask the librarian to issue a loan.
+      For unavailable books, click <strong>Place Hold</strong> to join the queue — check
+      <a routerLink="/lending/my-holds" style="color:#1565c0">My Holds</a> for status updates.
+    </span>
+  </div>
+}

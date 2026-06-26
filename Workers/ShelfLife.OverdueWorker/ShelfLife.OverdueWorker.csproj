@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Modules\Lending\ShelfLife.Lending.Infrastructure\ShelfLife.Lending.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Shared\ShelfLife.Infrastructure.Messaging\ShelfLife.Infrastructure.Messaging.csproj" />
   </ItemGroup>
 
 </Project>

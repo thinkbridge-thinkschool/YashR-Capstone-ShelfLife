@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using ShelfLife.Insights.Infrastructure;
+using ShelfLife.Notifications.Infrastructure;
 
 #nullable disable
 
-namespace ShelfLife.Insights.Infrastructure.Migrations
+namespace ShelfLife.Notifications.Infrastructure.Migrations
 {
-    [DbContext(typeof(InsightsDbContext))]
-    partial class InsightsDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(NotificationsDbContext))]
+    [Migration("20260626053758_AddDispatchedNotifications")]
+    partial class AddDispatchedNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,91 +114,67 @@ namespace ShelfLife.Insights.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("ShelfLife.Insights.Infrastructure.MemberActivityProjection", b =>
+            modelBuilder.Entity("ShelfLife.Notifications.Infrastructure.DeliveryLog", b =>
                 {
-                    b.Property<Guid>("MemberId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("ActiveLoans")
-                        .HasColumnType("int");
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("RecipientEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("OverdueLoans")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalBorrows")
-                        .HasColumnType("int");
-
-                    b.HasKey("MemberId");
-
-                    b.ToTable("MemberActivity", "insights");
-                });
-
-            modelBuilder.Entity("ShelfLife.Insights.Infrastructure.OverdueLoanProjection", b =>
-                {
-                    b.Property<Guid>("LoanId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("RecipientId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("BookTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("DueDate")
+                    b.Property<DateTimeOffset>("SentAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<Guid>("MemberId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("MemberName")
+                    b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("LoanId");
+                    b.Property<bool>("Success")
+                        .HasColumnType("bit");
 
-                    b.ToTable("OverdueLoans", "insights");
+                    b.HasKey("Id");
+
+                    b.ToTable("DeliveryLogs", "notifications");
                 });
 
-            modelBuilder.Entity("ShelfLife.Insights.Infrastructure.PopularTitleProjection", b =>
+            modelBuilder.Entity("ShelfLife.Notifications.Infrastructure.DispatchedNotification", b =>
                 {
-                    b.Property<Guid>("BookTitleId")
+                    b.Property<Guid>("MessageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Author")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTimeOffset>("DispatchedAt")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("BorrowCount")
-                        .HasColumnType("int");
+                    b.HasKey("MessageId");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.HasIndex("DispatchedAt");
 
-                    b.HasKey("BookTitleId");
-
-                    b.ToTable("PopularTitles", "insights");
+                    b.ToTable("DispatchedNotifications", "notifications");
                 });
 
-            modelBuilder.Entity("ShelfLife.Insights.Infrastructure.ProcessedProjectionEvent", b =>
+            modelBuilder.Entity("ShelfLife.Notifications.Infrastructure.IdempotencyKey", b =>
                 {
-                    b.Property<Guid>("MessageId")
+                    b.Property<Guid>("EventId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("ProcessedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.HasKey("MessageId");
+                    b.HasKey("EventId");
 
-                    b.HasIndex("ProcessedAt");
-
-                    b.ToTable("ProcessedProjectionEvents", "insights");
+                    b.ToTable("IdempotencyKeys", "notifications");
                 });
 #pragma warning restore 612, 618
         }

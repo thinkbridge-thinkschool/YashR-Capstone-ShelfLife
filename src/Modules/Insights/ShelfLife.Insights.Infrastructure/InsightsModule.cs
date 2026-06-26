@@ -17,6 +17,11 @@ public static class InsightsModule
         services.AddScoped<IInsightsReadModel, InsightsReadModel>();
         services.AddScoped<InsightsQueryHandler>();
 
+        services.AddScoped<BookBorrowedProjectionHandler>();
+        services.AddScoped<BookReturnedProjectionHandler>();
+        services.AddScoped<LoanOverdueProjectionHandler>();
+        services.AddHostedService<InsightsProjectionWorker>();
+
         return services;
     }
 }

@@ -10,6 +10,12 @@
     @if (totalCount() > 0) {
       <span class="table-count">{{ totalCount() }} loans</span>
     }
+    <span style="font-size:11px;color:#2e7d32;background:rgba(46,125,50,0.1);padding:2px 8px;border-radius:12px;margin-left:4px">
+      Live
+    </span>
+    <button mat-icon-button [disabled]="loading()" (click)="refresh()" matTooltip="Refresh now">
+      <mat-icon>refresh</mat-icon>
+    </button>
   </div>
 
   @if (loading()) {

@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CatalogService } from '../catalog.service';
 import { LendingService } from '../../lending/lending.service';
+import { AuthService } from '../../shared/services/auth.service';
 import { BookSummaryDto } from '../../shared/models/catalog.models';
 
 @Component({
@@ -37,6 +38,7 @@ export class SearchBooksComponent implements OnInit {
   private readonly catalog = inject(CatalogService);
   private readonly lending = inject(LendingService);
   private readonly snackBar = inject(MatSnackBar);
+  readonly auth = inject(AuthService);
 
   readonly data = signal<BookSummaryDto[]>([]);
   readonly totalCount = signal(0);

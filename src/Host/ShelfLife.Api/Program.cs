@@ -128,27 +128,34 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-// Allows the Angular dev server (port 4200) to reach the API during development.
-// The policy is applied only when IsDevelopment() is true (see pipeline below).
+// Dev: always allows Angular dev server (port 4200).
+// Azure: add the Static Web App URL via CorsOrigins config (comma-separated).
+var extraCorsOrigins = (builder.Configuration["CorsOrigins"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries);
+
 builder.Services.AddCors(options =>
     options.AddPolicy("DevAngular", policy =>
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()));
+    {
+        var origins = new System.Collections.Generic.List<string> { "http://localhost:4200" };
+        origins.AddRange(extraCorsOrigins);
+        policy.WithOrigins(origins.ToArray()).AllowAnyHeader().AllowAnyMethod();
+    }));
 
-// ── Service Bus ───────────────────────────────────────────────────────────────
-builder.Services.AddSingleton(sp => new ServiceBusClient(
-    builder.Configuration["ServiceBus:FullyQualifiedNamespace"],
-    new DefaultAzureCredential()));
-builder.Services.AddScoped<IMessagePublisher, ServiceBusPublisher>();
-
-// ── Outbox relay ──────────────────────────────────────────────────────────────
-// EfOutboxStore uses IdentityDbContext because Identity's migration owns the
-// OutboxMessages and DeadLetterMessages tables (no circular dependency).
-builder.Services.AddScoped<IOutboxStore>(sp =>
-    new EfOutboxStore(sp.GetRequiredService<IdentityDbContext>()));
-builder.Services.AddScoped<OutboxRelayProcessor>();
-builder.Services.AddHostedService<OutboxRelayWorker>();
+// ── Service Bus + Outbox relay ────────────────────────────────────────────────
+// OutboxRelayWorker forwards DB outbox messages to Azure Service Bus.
+// In local dev ServiceBus:FullyQualifiedNamespace is empty — skip the relay
+// entirely (InsightsProjectionWorker / NotificationDispatchWorker read the DB
+// outbox directly, so no relay is needed for local functionality).
+var serviceBusNs = builder.Configuration["ServiceBus:FullyQualifiedNamespace"];
+if (!string.IsNullOrWhiteSpace(serviceBusNs))
+{
+    builder.Services.AddSingleton(_ => new ServiceBusClient(serviceBusNs, new DefaultAzureCredential()));
+    builder.Services.AddScoped<IMessagePublisher, ServiceBusPublisher>();
+    builder.Services.AddScoped<IOutboxStore>(sp =>
+        new EfOutboxStore(sp.GetRequiredService<IdentityDbContext>()));
+    builder.Services.AddScoped<OutboxRelayProcessor>();
+    builder.Services.AddHostedService<OutboxRelayWorker>();
+}
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 builder.Services.AddIdentityModule(builder.Configuration);
@@ -279,7 +286,13 @@ else
                 "Grant db_ddladmin to the managed identity. Error: {Msg}", ex.Message);
             break;
         }
-        catch (Exception ex) when (attempt < 10)
+        catch (Microsoft.Data.SqlClient.SqlException sqlEx) when (attempt < 10 && IsTransient(sqlEx))
+        {
+            log.LogWarning("DB not ready (attempt {Attempt}/10): {Message} — retrying in 3 s",
+                attempt, sqlEx.Message);
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex) when (attempt < 10 && ex is not Microsoft.Data.SqlClient.SqlException)
         {
             log.LogWarning("DB not ready (attempt {Attempt}/10): {Message} — retrying in 3 s",
                 attempt, ex.Message);
@@ -333,6 +346,12 @@ app.MapGroup("/api/v1/insights")
 app.MapHealthChecks("/health");
 
 app.Run();
+
+// Transient SQL Server error numbers: connection refused, timeout, network errors.
+// Non-transient errors (e.g. 2714 "object already exists") should not be retried.
+static bool IsTransient(Microsoft.Data.SqlClient.SqlException ex) =>
+    ex.Errors.Cast<Microsoft.Data.SqlClient.SqlError>()
+      .Any(e => e.Number is 53 or -2 or 18456 or 4060 or 40197 or 40501 or 40613 or 49918 or 49919 or 49920);
 
 static async Task SeedLibrarianAsync(IServiceProvider services)
 {
